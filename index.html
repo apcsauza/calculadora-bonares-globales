@@ -432,6 +432,8 @@
         td.pend { color:#94a3b8; }
         .chip-pend { display:inline-block; background:#eef2f7; color:#475569; border-radius:999px; padding:3px 10px; margin:2px; font-size:11px; font-weight:700; }
 
+            .curva-wrap { background:#1e2a47; border-radius:10px; padding:6px; overflow-x:auto; }
+        .curva-wrap svg { width:100%; height:auto; display:block; min-width:640px; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="cer.js"></script>
@@ -483,23 +485,25 @@
         </table>
     </div>
     <div class="status-text" style="margin-top:8px;">
-        <b>TIR real</b>: CER constante al valor de liquidación (equivale a la TIR de BYMA Educa sin "CER proyectado"). <b>TIR proyectada</b>: CER proyectado con la inflación mensual del control superior. Precios cada 100 VN, sucios. Duration y convexidad sobre flujos reales.
+        <b>TIR Actual</b>: calculada con el CER congelado en el valor de liquidación, es decir, rendimiento por encima de la inflación (equivale a la TIR de BYMA Educa sin "CER proyectado"). <b>TIR proyectada</b>: CER proyectado con la inflación mensual del control superior. Precios cada 100 VN, sucios. Duration y convexidad sobre flujos reales.
     </div>
 
     <div class="section-head">
-        <div class="section-title">Sensibilidad — variación de precio ante cambio de TIR real objetivo</div>
-        <button type="button" class="btn-descarga" onclick="descargarTabla('tablaSens', 'Sensibilidad CER', 'sensibilidad_cer.png')">⬇ Descargar sensibilidad</button>
+        <div class="section-title">Curva CER — TIR Actual vs Duration</div>
+        <button type="button" class="btn-descarga" onclick="descargarCurva()">⬇ Descargar curva</button>
     </div>
-    <div class="table-container">
-        <table id="tablaSens">
-            <thead><tr id="theadSens"></tr></thead>
-            <tbody id="sens"></tbody>
-        </table>
+    <div class="toolbar">
+        <div class="segmented-control" id="selRango">
+            <button type="button" class="segmented-btn active" data-r="4" onclick="cambiarRango(4)">Hasta 4 años</button>
+            <button type="button" class="segmented-btn" data-r="0" onclick="cambiarRango(0)">Todos</button>
+        </div>
     </div>
+    <div class="curva-wrap" id="curvaWrap"></div>
+    <div class="status-text" style="margin-top:6px;">La línea punteada es la curva de tendencia de los bonos (ajuste logarítmico sobre TIR Actual y Duration). Los instrumentos con duration menor a 0,1 año no entran en el ajuste.</div>
 
     <div class="aviso-box" id="pendientesBox"></div>
     <div class="aviso-box" id="feriadosBox">
-        <b>Calendario:</b> el CER de referencia es el de 10 días hábiles antes de cada fecha. Feriados 2024–2026 cargados; <b>desde 2027 son aproximados</b> (revisar cuando se publique el calendario oficial). La serie CER se actualiza a mano en <code>cer.js</code> y los parámetros de cada bono en <code>bonos_cer.js</code>.
+        <b>Calendario:</b> el CER de referencia es el de 10 días hábiles antes de cada fecha. Feriados 2024–2026 cargados; <b>desde 2027 son aproximados</b> (revisar cuando se publique el calendario oficial).
     </div>
 
     <div class="cta-banner">
@@ -726,7 +730,6 @@ function fechaLiquidacion(tipo, hoy) {
 
 
 // ============ UI ============
-const TARGETS = [0, 0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40];
 const TICKERS = Object.keys(window.BONOS_CER);
 const PX = Object.assign({}, window.PRECIOS_CER);
 const VAR = {};
@@ -736,7 +739,7 @@ let detalleTicker = null;
 
 const COLS = [
   ['vto', 'Vencim.', 'vto'], ['tk', 'Ticker', 'str'], ['fam', 'Familia', 'str'], ['precio', 'Precio c/100 VN', 'num'],
-  ['var', 'Var. Diaria', 'num'], ['paridad', 'Paridad', 'num'], ['tirReal', 'TIR Real (CER cte.)', 'num'],
+  ['var', 'Var. Diaria', 'num'], ['paridad', 'Paridad', 'num'], ['tirReal', 'TIR Actual', 'num'],
   ['tirProy', 'TIR Proyectada', 'num'], ['durMod', 'Duration Mod.', 'num'], ['duration', 'Duration', 'num'],
   ['conv', 'Convex.', 'num'], ['vtec', 'Valor Técnico', 'num'], ['prox', 'Próx. Pago', 'vto'], ['dias', 'Días', 'num']
 ];
@@ -760,8 +763,6 @@ function construirEncabezados() {
     if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
     renderTabla();
   });
-  document.getElementById('theadSens').innerHTML = '<th>Bono</th><th>TIR Real</th><th>Duration</th>' +
-    TARGETS.map(t => `<th>${(t * 100).toFixed(1).replace('.', ',')}%</th>`).join('');
 }
 
 function calcularTodo() {
@@ -829,29 +830,117 @@ function renderTabla() {
   document.getElementById('chipCount').textContent = lista.length + ' instrumentos';
 }
 
-function colorHeat(v, minS, maxS) {
-  const rojo = [248, 105, 107], amarillo = [255, 235, 132], verde = [99, 190, 123];
-  const lerp = (a, b, k) => a.map((x, i) => Math.round(x + (b[i] - x) * k));
-  const c = v <= 0 ? lerp(amarillo, rojo, minS < 0 ? Math.min(v / minS, 1) : 0) : lerp(amarillo, verde, maxS > 0 ? Math.min(v / maxS, 1) : 0);
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
+let rangoCurva = 4;
+function cambiarRango(r) {
+  rangoCurva = r;
+  document.querySelectorAll('#selRango .segmented-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.r) === r));
+  renderCurva();
 }
 
-function renderSens(fechaLiq, m) {
-  const valores = {}, todos = [];
-  TICKERS.forEach(t => {
-    const r = resultados[t];
-    if (!r || !(r.precio > 0)) return;
-    const vals = TARGETS.map(g => precioATir(t, g, fechaLiq, m) / r.precio - 1);
-    valores[t] = vals; todos.push(...vals);
+// Ajuste por mínimos cuadrados: y = a + b * ln(1 + x)
+function ajusteLog(pts) {
+  const n = pts.length;
+  if (n < 3) return null;
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  pts.forEach(p => { const x = Math.log(1 + p.x); sx += x; sy += p.y; sxx += x * x; sxy += x * p.y; });
+  const den = n * sxx - sx * sx;
+  if (Math.abs(den) < 1e-12) return null;
+  const b = (n * sxy - sx * sy) / den, a = (sy - b * sx) / n;
+  return x => a + b * Math.log(1 + x);
+}
+
+function renderCurva() {
+  const wrap = document.getElementById('curvaWrap');
+  let pts = TICKERS.filter(t => resultados[t]).map(t => ({
+    t, x: resultados[t].duration, y: resultados[t].tirReal * 100, lecer: window.BONOS_CER[t].fam === 'LECER'
+  }));
+  if (rangoCurva > 0) pts = pts.filter(p => p.x <= rangoCurva);
+  if (!pts.length) { wrap.innerHTML = '<div style="color:#cbd5e1;padding:30px;text-align:center">Sin datos para graficar</div>'; return; }
+
+  const W = 1200, H = 560, mL = 70, mR = 30, mT = 60, mB = 70;
+  const xMaxD = Math.max(...pts.map(p => p.x));
+  const xMax = rangoCurva > 0 ? rangoCurva + 0.15 : Math.ceil(xMaxD + 0.5);
+  // Escala Y según instrumentos con duration >= 0,1; los más cortos (TIR anualizada distorsionada) se topan en el borde
+  const base = pts.filter(p => p.x >= 0.1).length ? pts.filter(p => p.x >= 0.1) : pts;
+  const yMinD = Math.min(...base.map(p => p.y)), yMaxD = Math.max(...base.map(p => p.y));
+  const yMin = Math.max(0, Math.floor(yMinD - 1)), yMax = Math.ceil(yMaxD + 1);
+  const px = x => mL + (x / xMax) * (W - mL - mR);
+  const py = y => H - mB - ((y - yMin) / (yMax - yMin)) * (H - mT - mB);
+
+  let g = '';
+  const pasoY = (yMax - yMin) > 14 ? 2 : 1;
+  for (let y = yMin; y <= yMax; y += pasoY) {
+    g += `<line x1="${mL}" x2="${W - mR}" y1="${py(y)}" y2="${py(y)}" stroke="#2c3b60" stroke-width="1"/>` +
+         `<text x="${mL - 10}" y="${py(y) + 4}" text-anchor="end" fill="#7f90b5" font-size="12">${y}%</text>`;
+  }
+  const pasoX = xMax > 6 ? 1 : 0.5;
+  for (let x = 0; x <= xMax + 1e-9; x += pasoX) {
+    g += `<line x1="${px(x)}" x2="${px(x)}" y1="${mT}" y2="${H - mB}" stroke="#2c3b60" stroke-width="1"/>` +
+         `<text x="${px(x)}" y="${H - mB + 20}" text-anchor="middle" fill="#7f90b5" font-size="12">${x.toFixed(2)}</text>`;
+  }
+
+  // Curva de tendencia (solo bonos; excluye duration < 0,1)
+  const f = ajusteLog(pts.filter(p => !p.lecer && p.x >= 0.1));
+  let linea = '';
+  if (f) {
+    const xs = pts.filter(p => !p.lecer && p.x >= 0.1).map(p => p.x);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const d = [];
+    for (let i = 0; i <= 60; i++) { const x = x0 + (x1 - x0) * i / 60; d.push((i ? 'L' : 'M') + px(x).toFixed(1) + ' ' + py(f(x)).toFixed(1)); }
+    linea = `<path d="${d.join(' ')}" fill="none" stroke="#3aa0d0" stroke-width="2" stroke-dasharray="6 5"/>`;
+  }
+
+  // Etiquetas sin superposición (arriba, abajo, derecha, izquierda)
+  const cajas = [];
+  const choca = c => cajas.some(o => c.x1 < o.x2 && c.x2 > o.x1 && c.y1 < o.y2 && c.y2 > o.y1);
+  let puntos = '';
+  pts.slice().sort((a, b) => a.x - b.x).forEach(p => {
+    const fuera = p.y > yMax;
+    const cx = px(p.x), cy = fuera ? py(yMax) : py(p.y);
+    const rot = fuera ? p.t + ' (' + p.y.toFixed(1).replace('.', ',') + '%)' : p.t;
+    const w = rot.length * 7.2 + 6, h = 14;
+    const opciones = [
+      { x: cx, y: cy - 14, a: 'middle' }, { x: cx, y: cy + 24, a: 'middle' },
+      { x: cx + 12, y: cy + 4, a: 'start' }, { x: cx - 12, y: cy + 4, a: 'end' },
+      { x: cx, y: cy - 30, a: 'middle' }, { x: cx, y: cy + 40, a: 'middle' }
+    ];
+    let el = opciones[0];
+    for (const o of opciones) {
+      const x1 = o.a === 'middle' ? o.x - w / 2 : o.a === 'start' ? o.x : o.x - w;
+      const c = { x1, x2: x1 + w, y1: o.y - h + 2, y2: o.y + 3 };
+      if (!choca(c)) { el = o; cajas.push(c); break; }
+      el = o;
+    }
+    const col = p.lecer ? '#4fd1a5' : '#7ea6e8';
+    puntos += `<circle cx="${cx}" cy="${cy}" r="7" fill="${col}" stroke="#101a33" stroke-width="2"/>` +
+              `<text x="${el.x}" y="${el.y}" text-anchor="${el.a}" fill="${col}" font-size="12" font-weight="700">${rot}</text>`;
   });
-  const minS = todos.length ? Math.min(...todos) : 0, maxS = todos.length ? Math.max(...todos) : 0;
-  const orden = TICKERS.slice().sort((a, b) => window.BONOS_CER[a].vto < window.BONOS_CER[b].vto ? -1 : 1);
-  document.getElementById('sens').innerHTML = orden.map(t => {
-    const r = resultados[t];
-    if (!valores[t]) return `<tr><td class="ticker">${t}</td><td>-</td><td>-</td>${TARGETS.map(() => '<td class="sens">-</td>').join('')}</tr>`;
-    return `<tr><td class="ticker">${t}</td><td>${fmtPct(r.tirReal)}</td><td>${fmtNum(r.duration)}</td>` +
-      valores[t].map(s => `<td class="sens" style="background:${colorHeat(s, minS, maxS)};color:#1e293b">${fmtPct(s)}</td>`).join('') + '</tr>';
-  }).join('');
+
+  wrap.innerHTML = `<svg id="svgCurva" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Segoe UI, Tahoma, Arial, sans-serif">
+    <rect width="${W}" height="${H}" fill="#1e2a47"/>
+    <text x="${W / 2}" y="38" text-anchor="middle" fill="#ffffff" font-size="26" font-weight="800">CURVA CER — TIR VS DURATION</text>
+    ${g}
+    <text x="${mL - 52}" y="${(mT + H - mB) / 2}" fill="#7f90b5" font-size="12" transform="rotate(-90 ${mL - 52} ${(mT + H - mB) / 2})" text-anchor="middle">TIR Actual (%)</text>
+    <text x="${(mL + W - mR) / 2}" y="${H - 22}" text-anchor="middle" fill="#7f90b5" font-size="12">Duration (años)</text>
+    ${linea}${puntos}
+    <text x="${mL}" y="${H - 22}" fill="#8fa3c9" font-size="12" font-weight="700">Carlos Sauza — Mat. CNV N° 1823</text>
+    <text x="${W - mR}" y="${H - 22}" text-anchor="end" fill="#8fa3c9" font-size="12">Bonos: azul · Letras: verde</text>
+  </svg>`;
+}
+
+function descargarCurva() {
+  const svg = document.getElementById('svgCurva');
+  if (!svg) return;
+  const xml = new XMLSerializer().serializeToString(svg);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = 2400; c.height = 1120;
+    const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, c.width, c.height);
+    const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'curva_cer.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+  img.onerror = () => alert('No se pudo generar la imagen.');
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
 }
 
 function renderTodo() {
@@ -861,7 +950,7 @@ function renderTodo() {
   document.getElementById('cerStatus').textContent = 'Serie CER cargada hasta ' + fmtFecha(parseDateISO(CER_ULTIMA)) +
     ' (' + fmtNum(CER_ULTIMO_VALOR, 4) + '). Más allá de esa fecha se proyecta con la inflación mensual ingresada.';
   renderTabla();
-  renderSens(fechaLiq, m);
+  renderCurva();
   if (detalleTicker && document.getElementById('modalOverlay').classList.contains('open')) renderDetalle();
 }
 
@@ -899,7 +988,7 @@ function renderDetalle() {
     return;
   }
   document.getElementById('modalRentabilidad').innerHTML =
-    box('TIR real (CER cte.)', fmtPct(r.tirReal)) + box('TIR proyectada', fmtPct(r.tirProy)) +
+    box('TIR actual', fmtPct(r.tirReal)) + box('TIR proyectada', fmtPct(r.tirProy)) +
     box('Duration', fmtNum(r.duration)) + box('Duration mod.', fmtNum(r.durMod)) + box('Convexidad', fmtNum(r.convexidad));
   document.getElementById('modalValuacion').innerHTML =
     box('Precio sucio', fmtNum(r.precio)) + box('Valor par', fmtNum(r.valorPar)) + box('Int. corridos', fmtNum(r.interesesCorridos)) +
@@ -927,10 +1016,16 @@ async function actualizarPreciosData912() {
   const btn = document.getElementById('btnData912'), status = document.getElementById('data912Status');
   btn.disabled = true; status.textContent = 'Buscando precios (beta)...';
   try {
-    const res = await fetch('https://data912.com/live/arg_bonds');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const lista = Array.isArray(data) ? data : (data.data || []);
+    // Bonos y letras viven en endpoints distintos de data912 (las letras, como X29E7 y X30N6, en arg_notes)
+    const fuentes = await Promise.allSettled(['arg_bonds', 'arg_notes'].map(async ep => {
+      const res = await fetch('https://data912.com/live/' + ep);
+      if (!res.ok) throw new Error(ep + ' HTTP ' + res.status);
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data.data || []);
+    }));
+    const lista = [];
+    fuentes.forEach(f => { if (f.status === 'fulfilled') lista.push(...f.value); });
+    if (!lista.length) throw new Error('Sin respuesta de data912');
     const mapa = {}, mapaVar = {};
     lista.forEach(it => {
       const sym = String(it.symbol || it.ticker || '').toUpperCase();
