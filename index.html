@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Bonares y Globales — Carlos Sauza (Mat. 1823)</title>
+    <title>Calculadora de Bonos CER — Carlos Sauza (Mat. 1823)</title>
     <style>
+
         :root {
             --primary: #1a365d;
             --accent: #2b6cb0;
@@ -172,6 +173,41 @@
             text-decoration: underline;
             text-decoration-style: dotted;
         }
+
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 24px 0 10px 0;
+        }
+        .section-head .section-title { margin: 0; }
+        .btn-descarga {
+            background-color: #fff;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-descarga:hover { background-color: var(--accent); color: #fff; }
+
+        .btn-data912 {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 9px 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-data912:hover { background-color: var(--primary); }
+        .btn-data912:disabled { opacity: .6; cursor: wait; }
 
         .btn-detalle {
             background-color: var(--accent);
@@ -362,487 +398,112 @@
         }
 
         .disclaimer p { margin: 4px 0; }
+
+        .bloque-titulo {
+            margin: 40px 0 0 0;
+            padding: 10px 14px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-radius: 8px;
+        }
+
+        .var-pos { color: #137333; font-weight: 700; }
+        .var-neg { color: #b91c1c; font-weight: 700; }
+
+        th.sortable { cursor:pointer; user-select:none; white-space:nowrap; }
+        th.sortable:hover { background-color:#2b4c7e; }
+        .sort-arrow { font-size:10px; opacity:.45; margin-left:3px; }
+        .sort-arrow.activa { opacity:1; color:#fde68a; }
+        td.vto { white-space:nowrap; font-weight:600; }
+
+        .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+        .buscar { padding:8px 12px; border:1px solid var(--border); border-radius:999px; font-size:13px; min-width:200px; }
+        .chip-count { background:#eef2f7; color:#475569; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700; }
+        .toolbar .spacer { flex:1; }
+        td.emisor { text-align:left; white-space:nowrap; }
+        td.ley, td.lamina, td.frec, td.moneda, td.diascup { white-space:nowrap; }
+    
+        .aviso-box { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:8px; padding:10px 14px; font-size:12px; line-height:1.5; margin-top:14px; }
+        .aviso-box b { color:#78350f; }
+        td.pend { color:#94a3b8; }
+        .chip-pend { display:inline-block; background:#eef2f7; color:#475569; border-radius:999px; padding:3px 10px; margin:2px; font-size:11px; font-weight:700; }
+
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="cer.js"></script>
+    <script src="bonos_cer.js"></script>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>Calculadora de Bonares y Globales</h1>
+        <h1>Calculadora de Bonos CER</h1>
         <div class="advisor-info">Asesor Financiero: Carlos Sauza — Mat. CNV N° 1823</div>
     </div>
 
     <div class="controls-grid">
         <div class="input-group">
-            <label for="tcVal">Tipo de Cambio (ARS) <span id="tcBadge" class="mep-badge loading" onclick="obtenerDolar()" title="Clic para recargar">Cargando...</span></label>
-            <input type="number" id="tcVal" step="0.01" value="1514">
-        </div>
-        <div class="input-group">
             <label for="plazoLiq">Plazo de Liquidación</label>
-            <select id="plazoLiq">
+            <select id="plazoLiq" onchange="renderTodo()">
                 <option value="CI">CI (hoy)</option>
                 <option value="24HS" selected>24HS</option>
             </select>
         </div>
+        <div class="input-group">
+            <label for="inflMensual">Inflación mensual proyectada (%)</label>
+            <input type="number" id="inflMensual" step="0.1" value="2.0" oninput="renderTodo()">
+        </div>
+        <div class="input-group">
+            <label>Precios de mercado <span id="timerBadge" class="mep-badge" onclick="toggleTemporizador()" title="Clic para pausar/reanudar">Auto 30s</span></label>
+            <button type="button" class="btn-data912" id="btnData912" onclick="actualizarPreciosData912()">Actualizar precios (beta)</button>
+        </div>
     </div>
-    <div class="status-text" id="mepStatus"></div>
+    <div class="status-text" id="data912Status"></div>
     <div class="status-text" id="fechaLiqStatus" style="margin-top:-14px;"></div>
+    <div class="status-text" id="cerStatus" style="margin-top:-14px;"></div>
 
-    <div class="section-title">Cuadro Resumido</div>
+    <div class="bloque-titulo" style="margin-top:10px;">Bonos CER</div>
+
+    <div class="section-head">
+        <div class="section-title">Cuadro Resumido — Bonos y Letras CER</div>
+        <button type="button" class="btn-descarga" onclick="descargarTabla('tablaT', 'Bonos CER', 'bonos_cer.png')">⬇ Descargar cuadro</button>
+    </div>
+    <div class="toolbar">
+        <input type="text" id="busc" class="buscar" placeholder="Buscar ticker o familia..." oninput="renderTodo()">
+        <span class="chip-count" id="chipCount"></span>
+    </div>
     <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th colspan="6">Pesos</th>
-                    <th colspan="6">Dólares</th>
-                    <th></th>
-                </tr>
-                <tr>
-                    <th>Ley</th><th>Ticker</th><th>Precio c/100 NM</th><th>Paridad</th><th>TIR Efectiva</th><th>TIR Nominal</th>
-                    <th>Ley</th><th>Ticker</th><th>Precio c/100 NM</th><th>Paridad</th><th>TIR Efectiva</th><th>Duration Mod.</th><th></th>
-                </tr>
-            </thead>
-            <tbody id="tablaCuerpo">
-                <tr data-ticker="AO27">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AO27</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AO27" value="155930" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AO27D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AO27" value="102.8" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AO27')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AO28">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AO28</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AO28" value="148450" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AO28D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AO28" value="97.97" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AO28')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AN29">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AN29</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AN29" value="147290" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AN29D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AN29" value="97.18" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AN29')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AO29">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AO29</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AO29" value="143940" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AO29D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AO29" value="94.99" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AO29')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AL29">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL29</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AL29" value="84030" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL29D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AL29" value="55.46" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AL29')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AL30">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL30</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AL30" value="85850" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL30D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AL30" value="56.68" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AL30')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AL35">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL35</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AL35" value="122480" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL35D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AL35" value="80.82" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AL35')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AE38">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AE38</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AE38" value="127090" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AE38D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AE38" value="83.91" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AE38')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="AL41">
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL41</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="AL41" value="116520" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">ARG</td>
-                    <td class="ticker">AL41D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="AL41" value="76.9" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('AL41')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="GD29">
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD29</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="GD29" value="84890" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD29D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="GD29" value="56" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('GD29')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="GD30">
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD30</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="GD30" value="88130" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD30D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="GD30" value="58.14" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('GD30')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="GD35">
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD35</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="GD35" value="126670" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD35D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="GD35" value="83.57" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('GD35')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="GD38">
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD38</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="GD38" value="132280" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD38D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="GD38" value="87.38" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('GD38')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="GD41">
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD41</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="GD41" value="118540" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD41D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="GD41" value="78.23" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('GD41')">Ver detalle</button></td>
-                </tr>
-                <tr data-ticker="GD46">
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD46</td>
-                    <td><input type="number" class="editable-input precio-pesos" data-ticker="GD46" value="109310" step="10"></td>
-                    <td class="paridad-pesos">-</td>
-                    <td class="tir-ef-pesos">-</td>
-                    <td class="tir-nom-pesos">-</td>
-                    <td class="ticker">NY</td>
-                    <td class="ticker">GD46D</td>
-                    <td><input type="number" class="editable-input precio-usd" data-ticker="GD46" value="72.15" step="0.1"></td>
-                    <td class="paridad-usd">-</td>
-                    <td class="tir-ef-usd">-</td>
-                    <td class="dm">-</td>
-                    <td><button class="btn-detalle" onclick="abrirDetalle('GD46')">Ver detalle</button></td>
-                </tr>
-            </tbody>
+        <table id="tablaT">
+            <thead><tr id="theadRow"></tr></thead>
+            <tbody id="tabla"></tbody>
+        </table>
+    </div>
+    <div class="status-text" style="margin-top:8px;">
+        <b>TIR real</b>: CER constante al valor de liquidación (equivale a la TIR de BYMA Educa sin "CER proyectado"). <b>TIR proyectada</b>: CER proyectado con la inflación mensual del control superior. Precios cada 100 VN, sucios. Duration y convexidad sobre flujos reales.
+    </div>
+
+    <div class="section-head">
+        <div class="section-title">Sensibilidad — variación de precio ante cambio de TIR real objetivo</div>
+        <button type="button" class="btn-descarga" onclick="descargarTabla('tablaSens', 'Sensibilidad CER', 'sensibilidad_cer.png')">⬇ Descargar sensibilidad</button>
+    </div>
+    <div class="table-container">
+        <table id="tablaSens">
+            <thead><tr id="theadSens"></tr></thead>
+            <tbody id="sens"></tbody>
         </table>
     </div>
 
-    <div class="section-title">Sensibilidad (variación de precio ante cambio de TIR objetivo, en dólares)</div>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Bono</th><th>TIR Actual</th><th>DM</th>
-                    <th>5,0%</th><th>5,5%</th><th>6,0%</th><th>6,5%</th><th>7,0%</th><th>7,5%</th><th>8,0%</th><th>8,5%</th>
-                </tr>
-            </thead>
-            <tbody id="tablaSensibilidad">
-                <tr data-ticker-sens="AO27">
-                    <td class="ticker">AO27D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AO28">
-                    <td class="ticker">AO28D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AN29">
-                    <td class="ticker">AN29D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AO29">
-                    <td class="ticker">AO29D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AL29">
-                    <td class="ticker">AL29D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AL30">
-                    <td class="ticker">AL30D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AL35">
-                    <td class="ticker">AL35D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AE38">
-                    <td class="ticker">AE38D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="AL41">
-                    <td class="ticker">AL41D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="GD29">
-                    <td class="ticker">GD29D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="GD30">
-                    <td class="ticker">GD30D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="GD35">
-                    <td class="ticker">GD35D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="GD38">
-                    <td class="ticker">GD38D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="GD41">
-                    <td class="ticker">GD41D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-                <tr data-ticker-sens="GD46">
-                    <td class="ticker">GD46D</td>
-                    <td class="tir-actual-sens">-</td>
-                    <td class="dm-sens">-</td>
-                    <td class="sens" data-target="0.05">-</td>
-                    <td class="sens" data-target="0.055">-</td>
-                    <td class="sens" data-target="0.06">-</td>
-                    <td class="sens" data-target="0.065">-</td>
-                    <td class="sens" data-target="0.07">-</td>
-                    <td class="sens" data-target="0.075">-</td>
-                    <td class="sens" data-target="0.08">-</td>
-                    <td class="sens" data-target="0.085">-</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="aviso-box" id="pendientesBox"></div>
+    <div class="aviso-box" id="feriadosBox">
+        <b>Calendario:</b> el CER de referencia es el de 10 días hábiles antes de cada fecha. Feriados 2024–2026 cargados; <b>desde 2027 son aproximados</b> (revisar cuando se publique el calendario oficial). La serie CER se actualiza a mano en <code>cer.js</code> y los parámetros de cada bono en <code>bonos_cer.js</code>.
     </div>
 
     <div class="cta-banner">
-        🔒 Asesor: <strong>Carlos Sauza</strong> (Mat. CNV N° 1823) | 
+        🔒 Asesor: <strong>Carlos Sauza</strong> (Mat. CNV N° 1823) |
         <a href="https://www.balanz.com/abrir-cuenta-2.aspx?reference=carlos.sauza.asesor@gmail.com" target="_blank">Apretá aquí para abrir una cuenta en Balanz y recibir mi asesoramiento</a>
     </div>
 
@@ -853,21 +514,14 @@
                 <h2 id="modalTitulo">Detalle del bono</h2>
                 <button class="modal-close" onclick="cerrarDetalle()">✕</button>
             </div>
-
-            <div class="segmented-control" style="margin-bottom:16px;">
-                <button class="segmented-btn active" id="modalTabBtnPesos" onclick="cambiarMonedaDetalle('pesos')">💲 Pesos</button>
-                <button class="segmented-btn" id="modalTabBtnUsd" onclick="cambiarMonedaDetalle('usd')">💵 Dólares</button>
-            </div>
-
             <div class="modal-top-grid">
                 <div>
                     <div class="section-title" style="margin-top:0;">Medidas de Rentabilidad</div>
                     <div id="modalRentabilidad" class="modal-summary"></div>
                 </div>
                 <div>
-                    <div class="section-title" style="margin-top:0;">Valuación c/100 VN</div>
+                    <div class="section-title" style="margin-top:0;">Valuación c/100 VN (ajustada por CER)</div>
                     <div class="modal-summary" id="modalValuacion"></div>
-                    <div class="modal-summary" id="modalPrecioBox" style="max-width:220px; margin:10px auto 0;"></div>
                 </div>
             </div>
 
@@ -879,15 +533,13 @@
                     <label for="tenenciaNominal">Tenencia Nominal</label>
                     <input type="number" id="tenenciaNominal" value="100" step="10" min="0" oninput="renderFlujoTabla()">
                 </div>
-                <span class="tenencia-leyenda">Simula tu tenencia nominal</span>
+                <span class="tenencia-leyenda">Simula tu tenencia nominal (flujos en pesos con CER proyectado)</span>
             </div>
 
             <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Fecha de Cupón</th><th>Valor Residual</th><th>Renta</th><th>Amortización</th><th>Total</th>
-                        </tr>
+                        <tr><th>Fecha de Cupón</th><th>Valor Residual</th><th>Renta (% VN)</th><th>Amort. (% VN)</th><th>CER ref.</th><th>Renta $</th><th>Amort. $</th><th>Total $</th></tr>
                     </thead>
                     <tbody id="modalFlujo"></tbody>
                 </table>
@@ -896,371 +548,462 @@
     </div>
 
     <div class="disclaimer">
-        <p>⚠️ <strong>Disclaimer:</strong> Este dashboard es exclusivamente para fines educativos e informativos. No constituye asesoramiento financiero ni recomendación de inversión. Los datos pueden contener errores. Consulta a un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la posible pérdida del capital invertido.</p>
+        <p>⚠️ <strong>Disclaimer:</strong> Este dashboard es exclusivamente para fines educativos e informativos. No constituye asesoramiento financiero ni recomendación de inversión. Los datos pueden contener errores; los flujos surgen de los parámetros cargados y del CER publicado por el BCRA, y las proyecciones de inflación son supuestos del usuario. Verificar siempre con la documentación oficial de cada emisión.</p>
         <p>🔒 Uso exclusivo para clientes del asesor Carlos Sauza (Mat. CNV N° 1823).</p>
     </div>
 </div>
 
 <script>
-    const BONOS = {"AO27":{"freq":12,"base":360,"cupon":0.06,"tabla":null,"moneda":"dolares","monto":"$ 745,000,000.00","call":"No","emision":"2026-02-27","vencimiento":"2027-10-29","sched":[["2026-02-27",100,0,0,0],["2026-03-31",100,0.566667,0,0.566667],["2026-04-30",100,0.5,0,0.5],["2026-05-29",100,0.483333,0,0.483333],["2026-06-30",100,0.516667,0,0.516667],["2026-07-31",100,0.5,0,0.5],["2026-08-31",100,0.5,0,0.5],["2026-09-30",100,0.5,0,0.5],["2026-10-30",100,0.5,0,0.5],["2026-11-30",100,0.5,0,0.5],["2026-12-30",100,0.5,0,0.5],["2027-01-29",100,0.483333,0,0.483333],["2027-02-26",100,0.45,0,0.45],["2027-03-31",100,0.583333,0,0.583333],["2027-04-30",100,0.5,0,0.5],["2027-05-31",100,0.5,0,0.5],["2027-06-30",100,0.5,0,0.5],["2027-07-30",100,0.5,0,0.5],["2027-08-31",100,0.5,0,0.5],["2027-09-30",100,0.5,0,0.5],["2027-10-29",0,0.5,100,100.5]]},"AO28":{"freq":12,"base":360,"cupon":0.06,"tabla":null,"moneda":"dolares","monto":"$ 786,000,000.00","call":"No","emision":"2026-03-31","vencimiento":"2028-10-31","sched":[["2026-03-31",100,0,0,0],["2026-04-30",100,0.5,0,0.5],["2026-05-29",100,0.483333,0,0.483333],["2026-06-30",100,0.516667,0,0.516667],["2026-07-31",100,0.5,0,0.5],["2026-08-31",100,0.5,0,0.5],["2026-09-30",100,0.5,0,0.5],["2026-10-30",100,0.5,0,0.5],["2026-11-30",100,0.5,0,0.5],["2026-12-30",100,0.5,0,0.5],["2027-01-29",100,0.483333,0,0.483333],["2027-02-26",100,0.45,0,0.45],["2027-03-31",100,0.583333,0,0.583333],["2027-04-30",100,0.5,0,0.5],["2027-05-31",100,0.5,0,0.5],["2027-06-30",100,0.5,0,0.5],["2027-07-30",100,0.5,0,0.5],["2027-08-31",100,0.5,0,0.5],["2027-09-30",100,0.5,0,0.5],["2027-10-29",100,0.483333,0,0.483333],["2027-11-30",100,0.516667,0,0.516667],["2027-12-30",100,0.5,0,0.5],["2028-01-31",100,0.5,0,0.5],["2028-02-29",100,0.483333,0,0.483333],["2028-03-31",100,0.5,0,0.5],["2028-04-28",100,0.466667,0,0.466667],["2028-05-31",100,0.55,0,0.55],["2028-06-30",100,0.5,0,0.5],["2028-07-31",100,0.5,0,0.5],["2028-08-31",100,0.5,0,0.5],["2028-09-29",100,0.483333,0,0.483333],["2028-10-31",0,0.533333,100,100.533333]]},"AN29":{"freq":2,"base":360,"cupon":0.065,"tabla":null,"moneda":"dolares","monto":"$ 30,781,623.00","call":"No","emision":"2025-12-12","vencimiento":"2029-11-30","sched":[["2025-12-12",100,0,0,0],["2026-05-30",100,3.033333,0,3.033333],["2026-11-30",100,3.25,0,3.25],["2027-05-30",100,3.25,0,3.25],["2027-11-30",100,3.25,0,3.25],["2028-05-30",100,3.25,0,3.25],["2028-11-30",100,3.25,0,3.25],["2029-05-30",100,3.25,0,3.25],["2029-11-30",0,3.25,100,103.25]]},"AO29":{"freq":12,"base":360,"cupon":0.06,"tabla":null,"moneda":"dolares","monto":"$ 649,000,000.00","call":"No","emision":"2026-07-17","vencimiento":"2029-10-31","sched":[["2026-07-17",100,0,0,0],["2026-08-31",100,0.733333,0,0.733333],["2026-09-30",100,0.5,0,0.5],["2026-10-30",100,0.5,0,0.5],["2026-11-30",100,0.5,0,0.5],["2026-12-30",100,0.5,0,0.5],["2027-01-29",100,0.483333,0,0.483333],["2027-02-26",100,0.45,0,0.45],["2027-03-31",100,0.583333,0,0.583333],["2027-04-30",100,0.5,0,0.5],["2027-05-31",100,0.5,0,0.5],["2027-06-30",100,0.5,0,0.5],["2027-07-30",100,0.5,0,0.5],["2027-08-31",100,0.5,0,0.5],["2027-09-30",100,0.5,0,0.5],["2027-10-29",100,0.483333,0,0.483333],["2027-11-30",100,0.516667,0,0.516667],["2027-12-30",100,0.5,0,0.5],["2028-01-31",100,0.5,0,0.5],["2028-02-29",100,0.483333,0,0.483333],["2028-03-31",100,0.5,0,0.5],["2028-04-28",100,0.466667,0,0.466667],["2028-05-31",100,0.55,0,0.55],["2028-06-30",100,0.5,0,0.5],["2028-07-31",100,0.5,0,0.5],["2028-08-31",100,0.5,0,0.5],["2028-09-29",100,0.483333,0,0.483333],["2028-10-31",100,0.533333,0,0.533333],["2028-11-30",100,0.5,0,0.5],["2028-12-29",100,0.483333,0,0.483333],["2029-01-31",100,0.533333,0,0.533333],["2029-02-28",100,0.466667,0,0.466667],["2029-03-28",100,0.466667,0,0.466667],["2029-04-30",100,0.533333,0,0.533333],["2029-05-31",100,0.5,0,0.5],["2029-06-29",100,0.483333,0,0.483333],["2029-07-31",100,0.533333,0,0.533333],["2029-08-31",100,0.5,0,0.5],["2029-09-28",100,0.466667,0,0.466667],["2029-10-31",0,0.55,100,100.55]]},"AL29":{"freq":2,"base":360,"cupon":0.01,"tabla":null,"moneda":"dolares","monto":"$ 2,193,821,728.00","call":"No","emision":"2020-09-04","vencimiento":"2029-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.847222,0,0.847222],["2022-01-09",100,0.5,0,0.5],["2022-07-09",100,0.5,0,0.5],["2023-01-09",100,0.5,0,0.5],["2023-07-09",100,0.5,0,0.5],["2024-01-09",100,0.5,0,0.5],["2024-07-09",100,0.5,0,0.5],["2025-01-09",90,0.5,10,10.5],["2025-07-09",80,0.45,10,10.45],["2026-01-09",70,0.4,10,10.4],["2026-07-09",60,0.35,10,10.35],["2027-01-09",50,0.3,10,10.3],["2027-07-09",40,0.25,10,10.25],["2028-01-09",30,0.2,10,10.2],["2028-07-09",20,0.15,10,10.15],["2029-01-09",10,0.1,10,10.1],["2029-07-09",0,0.05,10,10.05]]},"AL30":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.005],["2023-07-09",0.0075],["2027-07-09",0.0175]],"moneda":"dolares","monto":"$13,501,133,049.00","call":"No","emision":"2020-09-04","vencimiento":"2030-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,0.25,0,0.25],["2022-07-09",100,0.25,0,0.25],["2023-01-09",100,0.25,0,0.25],["2023-07-09",100,0.25,0,0.25],["2024-01-09",100,0.375,0,0.375],["2024-07-09",96,0.375,4,4.375],["2025-01-09",88,0.36,8,8.36],["2025-07-09",80,0.33,8,8.33],["2026-01-09",72,0.3,8,8.3],["2026-07-09",64,0.27,8,8.27],["2027-01-09",56,0.24,8,8.24],["2027-07-09",48,0.21,8,8.21],["2028-01-09",40,0.42,8,8.42],["2028-07-09",32,0.35,8,8.35],["2029-01-09",24,0.28,8,8.28],["2029-07-09",16,0.21,8,8.21],["2030-01-09",8,0.14,8,8.14],["2030-07-09",0,0.07,8,8.07]]},"AL35":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.01125],["2022-07-09",0.015],["2023-07-09",0.03625],["2024-07-09",0.04125],["2027-07-09",0.0475],["2028-07-09",0.05]],"moneda":"dolares","monto":"$ 19,068,706,576.00","call":"No","emision":"2020-09-04","vencimiento":"2035-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,0.5625,0,0.5625],["2022-07-09",100,0.5625,0,0.5625],["2023-01-09",100,0.75,0,0.75],["2023-07-09",100,0.75,0,0.75],["2024-01-09",100,1.8125,0,1.8125],["2024-07-09",100,1.8125,0,1.8125],["2025-01-09",100,2.0625,0,2.0625],["2025-07-09",100,2.0625,0,2.0625],["2026-01-09",100,2.0625,0,2.0625],["2026-07-09",100,2.0625,0,2.0625],["2027-01-09",100,2.0625,0,2.0625],["2027-07-09",100,2.0625,0,2.0625],["2028-01-09",100,2.375,0,2.375],["2028-07-09",100,2.375,0,2.375],["2029-01-09",100,2.5,0,2.5],["2029-07-09",100,2.5,0,2.5],["2030-01-09",100,2.5,0,2.5],["2030-07-09",100,2.5,0,2.5],["2031-01-09",90,2.5,10,12.5],["2031-07-09",80,2.25,10,12.25],["2032-01-09",70,2,10,12],["2032-07-09",60,1.75,10,11.75],["2033-01-09",50,1.5,10,11.5],["2033-07-09",40,1.25,10,11.25],["2034-01-09",30,1,10,11],["2034-07-09",20,0.75,10,10.75],["2035-01-09",10,0.5,10,10.5],["2035-07-09",0,0.25,10,10.25]]},"AE38":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.02],["2022-07-09",0.03875],["2023-07-09",0.0425],["2024-07-09",0.05]],"moneda":"dolares","monto":"$ 7,213,696,728.00","call":"No","emision":"2020-09-04","vencimiento":"2038-01-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,1,0,1],["2022-07-09",100,1,0,1],["2023-01-09",100,1.9375,0,1.9375],["2023-07-09",100,1.9375,0,1.9375],["2024-01-09",100,2.125,0,2.125],["2024-07-09",100,2.125,0,2.125],["2025-01-09",100,2.5,0,2.5],["2025-07-09",100,2.5,0,2.5],["2026-01-09",100,2.5,0,2.5],["2026-07-09",100,2.5,0,2.5],["2027-01-09",100,2.5,0,2.5],["2027-07-09",95.45,2.5,4.55,7.05],["2028-01-09",90.91,2.38625,4.54,6.92625],["2028-07-09",86.36,2.27275,4.55,6.82275],["2029-01-09",81.82,2.159,4.54,6.699],["2029-07-09",77.27,2.0455,4.55,6.5955],["2030-01-09",72.73,1.93175,4.54,6.47175],["2030-07-09",68.18,1.81825,4.55,6.36825],["2031-01-09",63.64,1.7045,4.54,6.2445],["2031-07-09",59.09,1.591,4.55,6.141],["2032-01-09",54.55,1.47725,4.54,6.01725],["2032-07-09",50,1.36375,4.55,5.91375],["2033-01-09",45.46,1.25,4.54,5.79],["2033-07-09",40.91,1.1365,4.55,5.6865],["2034-01-09",36.36,1.02275,4.55,5.57275],["2034-07-09",31.82,0.909,4.54,5.449],["2035-01-09",27.27,0.7955,4.55,5.3455],["2035-07-09",22.73,0.68175,4.54,5.22175],["2036-01-09",18.18,0.56825,4.55,5.11825],["2036-07-09",13.64,0.4545,4.54,4.9945],["2037-01-09",9.09,0.341,4.55,4.891],["2037-07-09",4.55,0.22725,4.54,4.76725],["2038-01-09",0,0.11375,4.55,4.66375]]},"AL41":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.025],["2022-07-09",0.035],["2029-07-09",0.04875]],"moneda":"dolares","monto":"$ 1,493,335,907.00","call":"No","emision":"2020-09-04","vencimiento":"2041-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,1.25,0,1.25],["2022-07-09",100,1.25,0,1.25],["2023-01-09",100,1.75,0,1.75],["2023-07-09",100,1.75,0,1.75],["2024-01-09",100,1.75,0,1.75],["2024-07-09",100,1.75,0,1.75],["2025-01-09",100,1.75,0,1.75],["2025-07-09",100,1.75,0,1.75],["2026-01-09",100,1.75,0,1.75],["2026-07-09",100,1.75,0,1.75],["2027-01-09",100,1.75,0,1.75],["2027-07-09",100,1.75,0,1.75],["2028-01-09",96.43,1.75,3.57,5.32],["2028-07-09",92.86,1.687525,3.57,5.257525],["2029-01-09",89.29,1.62505,3.57,5.19505],["2029-07-09",85.71,1.562575,3.58,5.142575],["2030-01-09",82.14,2.089181,3.57,5.659181],["2030-07-09",78.57,2.002163,3.57,5.572163],["2031-01-09",75,1.915144,3.57,5.485144],["2031-07-09",71.43,1.828125,3.57,5.398125],["2032-01-09",67.86,1.741106,3.57,5.311106],["2032-07-09",64.29,1.654087,3.57,5.224087],["2033-01-09",60.71,1.567069,3.58,5.147069],["2033-07-09",57.14,1.479806,3.57,5.049806],["2034-01-09",53.57,1.392788,3.57,4.962788],["2034-07-09",50,1.305769,3.57,4.875769],["2035-01-09",46.43,1.21875,3.57,4.78875],["2035-07-09",42.86,1.131731,3.57,4.701731],["2036-01-09",39.29,1.044712,3.57,4.614713],["2036-07-09",35.71,0.957694,3.58,4.537694],["2037-01-09",32.14,0.870431,3.57,4.440431],["2037-07-09",28.57,0.783413,3.57,4.353413],["2038-01-09",25,0.696394,3.57,4.266394],["2038-07-09",21.43,0.609375,3.57,4.179375],["2039-01-09",17.86,0.522356,3.57,4.092356],["2039-07-09",14.29,0.435337,3.57,4.005338],["2040-01-09",10.71,0.348319,3.58,3.928319],["2040-07-09",7.14,0.261056,3.57,3.831056],["2041-01-09",3.57,0.174038,3.57,3.744037],["2041-07-09",0,0.087019,3.57,3.657019]]},"GD29":{"freq":2,"base":360,"cupon":0.01,"tabla":null,"moneda":"dolares","monto":"$  2,635,028,710.00","call":"No","emision":"2020-09-04","vencimiento":"2029-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.847222,0,0.847222],["2022-01-09",100,0.5,0,0.5],["2022-07-09",100,0.5,0,0.5],["2023-01-09",100,0.5,0,0.5],["2023-07-09",100,0.5,0,0.5],["2024-01-09",100,0.5,0,0.5],["2024-07-09",100,0.5,0,0.5],["2025-01-09",90,0.5,10,10.5],["2025-07-09",80,0.45,10,10.45],["2026-01-09",70,0.4,10,10.4],["2026-07-09",60,0.35,10,10.35],["2027-01-09",50,0.3,10,10.3],["2027-07-09",40,0.25,10,10.25],["2028-01-09",30,0.2,10,10.2],["2028-07-09",20,0.15,10,10.15],["2029-01-09",10,0.1,10,10.1],["2029-07-09",0,0.05,10,10.05]]},"GD30":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.005],["2023-07-09",0.0075],["2027-07-09",0.0175]],"moneda":"dolares","monto":"$16,090,612,053.00","call":"No","emision":"2020-09-04","vencimiento":"2030-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,0.25,0,0.25],["2022-07-09",100,0.25,0,0.25],["2023-01-09",100,0.25,0,0.25],["2023-07-09",100,0.25,0,0.25],["2024-01-09",100,0.375,0,0.375],["2024-07-09",96,0.375,4,4.375],["2025-01-09",88,0.36,8,8.36],["2025-07-09",80,0.33,8,8.33],["2026-01-09",72,0.3,8,8.3],["2026-07-09",64,0.27,8,8.27],["2027-01-09",56,0.24,8,8.24],["2027-07-09",48,0.21,8,8.21],["2028-01-09",40,0.42,8,8.42],["2028-07-09",32,0.35,8,8.35],["2029-01-09",24,0.28,8,8.28],["2029-07-09",16,0.21,8,8.21],["2030-01-09",8,0.14,8,8.14],["2030-07-09",0,0.07,8,8.07]]},"GD35":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.01125],["2022-07-09",0.015],["2023-07-09",0.03625],["2024-07-09",0.04125],["2027-07-09",0.0475],["2028-07-09",0.05]],"moneda":"dolares","monto":"$ 19,068,706,576.00","call":"No","emision":"2020-09-04","vencimiento":"2035-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,0.5625,0,0.5625],["2022-07-09",100,0.5625,0,0.5625],["2023-01-09",100,0.75,0,0.75],["2023-07-09",100,0.75,0,0.75],["2024-01-09",100,1.8125,0,1.8125],["2024-07-09",100,1.8125,0,1.8125],["2025-01-09",100,2.0625,0,2.0625],["2025-07-09",100,2.0625,0,2.0625],["2026-01-09",100,2.0625,0,2.0625],["2026-07-09",100,2.0625,0,2.0625],["2027-01-09",100,2.0625,0,2.0625],["2027-07-09",100,2.0625,0,2.0625],["2028-01-09",100,2.375,0,2.375],["2028-07-09",100,2.375,0,2.375],["2029-01-09",100,2.5,0,2.5],["2029-07-09",100,2.5,0,2.5],["2030-01-09",100,2.5,0,2.5],["2030-07-09",100,2.5,0,2.5],["2031-01-09",90,2.5,10,12.5],["2031-07-09",80,2.25,10,12.25],["2032-01-09",70,2,10,12],["2032-07-09",60,1.75,10,11.75],["2033-01-09",50,1.5,10,11.5],["2033-07-09",40,1.25,10,11.25],["2034-01-09",30,1,10,11],["2034-07-09",20,0.75,10,10.75],["2035-01-09",10,0.5,10,10.5],["2035-07-09",0,0.25,10,10.25]]},"GD38":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.02],["2022-07-09",0.03875],["2023-07-09",0.0425],["2024-07-09",0.05]],"moneda":"dolares","monto":"$ 11,405,065,267.00","call":"No","emision":"2020-09-04","vencimiento":"2038-01-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,1,0,1],["2022-07-09",100,1,0,1],["2023-01-09",100,1.9375,0,1.9375],["2023-07-09",100,1.9375,0,1.9375],["2024-01-09",100,2.125,0,2.125],["2024-07-09",100,2.125,0,2.125],["2025-01-09",100,2.5,0,2.5],["2025-07-09",100,2.5,0,2.5],["2026-01-09",100,2.5,0,2.5],["2026-07-09",100,2.5,0,2.5],["2027-01-09",100,2.5,0,2.5],["2027-07-09",95.45,2.5,4.55,7.05],["2028-01-09",90.91,2.38625,4.54,6.92625],["2028-07-09",86.36,2.27275,4.55,6.82275],["2029-01-09",81.82,2.159,4.54,6.699],["2029-07-09",77.27,2.0455,4.55,6.5955],["2030-01-09",72.73,1.93175,4.54,6.47175],["2030-07-09",68.18,1.81825,4.55,6.36825],["2031-01-09",63.64,1.7045,4.54,6.2445],["2031-07-09",59.09,1.591,4.55,6.141],["2032-01-09",54.55,1.47725,4.54,6.01725],["2032-07-09",50,1.36375,4.55,5.91375],["2033-01-09",45.46,1.25,4.54,5.79],["2033-07-09",40.91,1.1365,4.55,5.6865],["2034-01-09",36.36,1.02275,4.55,5.57275],["2034-07-09",31.82,0.909,4.54,5.449],["2035-01-09",27.27,0.7955,4.55,5.3455],["2035-07-09",22.73,0.68175,4.54,5.22175],["2036-01-09",18.18,0.56825,4.55,5.11825],["2036-07-09",13.64,0.4545,4.54,4.9945],["2037-01-09",9.09,0.341,4.55,4.891],["2037-07-09",4.55,0.22725,4.54,4.76725],["2038-01-09",0,0.11375,4.55,4.66375]]},"GD41":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.025],["2022-07-09",0.035],["2029-07-09",0.04875]],"moneda":"dolares","monto":"$ 10,482,111,279.00","call":"No","emision":"2020-09-04","vencimiento":"2041-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,1.25,0,1.25],["2022-07-09",100,1.25,0,1.25],["2023-01-09",100,1.75,0,1.75],["2023-07-09",100,1.75,0,1.75],["2024-01-09",100,1.75,0,1.75],["2024-07-09",100,1.75,0,1.75],["2025-01-09",100,1.75,0,1.75],["2025-07-09",100,1.75,0,1.75],["2026-01-09",100,1.75,0,1.75],["2026-07-09",100,1.75,0,1.75],["2027-01-09",100,1.75,0,1.75],["2027-07-09",100,1.75,0,1.75],["2028-01-09",96.43,1.75,3.57,5.32],["2028-07-09",92.86,1.687525,3.57,5.257525],["2029-01-09",89.29,1.62505,3.57,5.19505],["2029-07-09",85.71,1.562575,3.58,5.142575],["2030-01-09",82.14,2.089181,3.57,5.659181],["2030-07-09",78.57,2.002163,3.57,5.572163],["2031-01-09",75,1.915144,3.57,5.485144],["2031-07-09",71.43,1.828125,3.57,5.398125],["2032-01-09",67.86,1.741106,3.57,5.311106],["2032-07-09",64.29,1.654087,3.57,5.224087],["2033-01-09",60.71,1.567069,3.58,5.147069],["2033-07-09",57.14,1.479806,3.57,5.049806],["2034-01-09",53.57,1.392788,3.57,4.962788],["2034-07-09",50,1.305769,3.57,4.875769],["2035-01-09",46.43,1.21875,3.57,4.78875],["2035-07-09",42.86,1.131731,3.57,4.701731],["2036-01-09",39.29,1.044712,3.57,4.614713],["2036-07-09",35.71,0.957694,3.58,4.537694],["2037-01-09",32.14,0.870431,3.57,4.440431],["2037-07-09",28.57,0.783413,3.57,4.353413],["2038-01-09",25,0.696394,3.57,4.266394],["2038-07-09",21.43,0.609375,3.57,4.179375],["2039-01-09",17.86,0.522356,3.57,4.092356],["2039-07-09",14.29,0.435337,3.57,4.005338],["2040-01-09",10.71,0.348319,3.58,3.928319],["2040-07-09",7.14,0.261056,3.57,3.831056],["2041-01-09",3.57,0.174038,3.57,3.744037],["2041-07-09",0,0.087019,3.57,3.657019]]},"GD46":{"freq":2,"base":360,"cupon":null,"tabla":[["2020-09-04",0.00125],["2021-07-09",0.01125],["2022-07-09",0.015],["2023-07-09",0.03625],["2024-07-09",0.04125],["2027-07-09",0.04375],["2028-07-09",0.05]],"moneda":"Dolares","monto":"$2,091,997,124.00","call":"No","emision":"2020-09-04","vencimiento":"2046-07-09","sched":[["2020-09-04",100,0,0,0],["2021-07-09",100,0.105903,0,0.105903],["2022-01-09",100,0.5625,0,0.5625],["2022-07-09",100,0.5625,0,0.5625],["2023-01-09",100,0.75,0,0.75],["2023-07-09",100,0.75,0,0.75],["2024-01-09",100,1.8125,0,1.8125],["2024-07-09",100,1.8125,0,1.8125],["2025-01-09",97.73,2.0625,2.27,4.3325],["2025-07-09",95.45,2.015681,2.28,4.295681],["2026-01-09",93.18,1.968656,2.27,4.238656],["2026-07-09",90.91,1.921838,2.27,4.191838],["2027-01-09",88.64,1.875019,2.27,4.145019],["2027-07-09",86.36,1.8282,2.28,4.1082],["2028-01-09",84.09,1.889125,2.27,4.159125],["2028-07-09",81.82,1.839469,2.27,4.109469],["2029-01-09",79.55,2.0455,2.27,4.3155],["2029-07-09",77.27,1.98875,2.28,4.26875],["2030-01-09",75,1.93175,2.27,4.20175],["2030-07-09",72.73,1.875,2.27,4.145],["2031-01-09",70.45,1.81825,2.28,4.09825],["2031-07-09",68.18,1.76125,2.27,4.03125],["2032-01-09",65.91,1.7045,2.27,3.9745],["2032-07-09",63.64,1.64775,2.27,3.91775],["2033-01-09",61.36,1.591,2.28,3.871],["2033-07-09",59.09,1.534,2.27,3.804],["2034-01-09",56.82,1.47725,2.27,3.74725],["2034-07-09",54.55,1.4205,2.27,3.6905],["2035-01-09",52.27,1.36375,2.28,3.64375],["2035-07-09",50,1.30675,2.27,3.57675],["2036-01-09",47.73,1.25,2.27,3.52],["2036-07-09",45.45,1.19325,2.28,3.47325],["2037-01-09",43.18,1.13625,2.27,3.40625],["2037-07-09",40.91,1.0795,2.27,3.3495],["2038-01-09",38.64,1.02275,2.27,3.29275],["2038-07-09",36.36,0.966,2.28,3.246],["2039-01-09",34.09,0.909,2.27,3.179],["2039-07-09",31.82,0.85225,2.27,3.12225],["2040-01-09",29.55,0.7955,2.27,3.0655],["2040-07-09",27.27,0.73875,2.28,3.01875],["2041-01-09",25,0.68175,2.27,2.95175],["2041-07-09",22.73,0.625,2.27,2.895],["2042-01-09",20.45,0.56825,2.28,2.84825],["2042-07-09",18.18,0.51125,2.27,2.78125],["2043-01-09",15.91,0.4545,2.27,2.7245],["2043-07-09",13.64,0.39775,2.27,2.66775],["2044-01-09",11.36,0.341,2.28,2.621],["2044-07-09",9.09,0.284,2.27,2.554],["2045-01-09",6.82,0.22725,2.27,2.49725],["2045-07-09",4.55,0.1705,2.27,2.4405],["2046-01-09",2.27,0.11375,2.28,2.39375],["2046-07-09",0,0.05675,2.27,2.32675]]}};
-    const FERIADOS = new Set(["2024-01-01", "2024-02-12", "2024-02-13", "2024-03-24", "2024-03-28", "2024-03-29", "2024-04-01", "2024-04-02", "2024-04-10", "2024-05-01", "2024-05-25", "2024-06-16", "2024-06-17", "2024-06-20", "2024-06-21", "2024-07-07", "2024-07-09", "2024-08-17", "2024-10-03", "2024-10-04", "2024-11-18", "2024-12-25", "2024-12-31", "2025-01-01", "2025-03-03", "2025-03-04", "2025-03-24", "2025-04-02", "2025-04-17", "2025-04-18", "2025-05-01", "2025-05-02", "2025-06-16", "2025-06-20", "2025-07-09", "2025-08-15", "2025-10-10", "2025-11-21", "2025-11-24", "2025-12-08", "2025-12-25", "2025-12-31", "2026-01-01", "2026-02-16", "2026-02-17", "2026-03-23", "2026-03-24", "2026-04-02", "2026-04-03", "2026-05-01", "2026-05-25", "2026-06-15", "2026-07-09", "2026-07-10", "2026-08-17", "2026-10-12", "2026-11-23", "2026-12-07", "2026-12-08", "2026-12-25", "2026-12-31"]);
-    const LEY = {"AO27": "ARG", "AO28": "ARG", "AN29": "ARG", "AO29": "ARG", "AL29": "ARG", "AL30": "ARG", "AL35": "ARG", "AE38": "ARG", "AL41": "ARG", "GD29": "NY", "GD30": "NY", "GD35": "NY", "GD38": "NY", "GD41": "NY", "GD46": "NY"};
-    const TICKERS = ["AO27", "AO28", "AN29", "AO29", "AL29", "AL30", "AL35", "AE38", "AL41", "GD29", "GD30", "GD35", "GD38", "GD41", "GD46"];
-    const TARGETS = [0.05,0.055,0.06,0.065,0.07,0.075,0.08,0.085];
+// <ENGINE>
+const FERIADOS = new Set(["2024-01-01","2024-02-12","2024-02-13","2024-03-24","2024-03-28","2024-03-29","2024-04-01","2024-04-02","2024-04-10","2024-05-01","2024-05-25","2024-06-16","2024-06-17","2024-06-20","2024-06-21","2024-07-07","2024-07-09","2024-08-17","2024-10-03","2024-10-04","2024-11-18","2024-12-25","2024-12-31","2025-01-01","2025-03-03","2025-03-04","2025-03-24","2025-04-02","2025-04-17","2025-04-18","2025-05-01","2025-05-02","2025-06-16","2025-06-20","2025-07-09","2025-08-15","2025-10-10","2025-11-21","2025-11-24","2025-12-08","2025-12-25","2025-12-31","2026-01-01","2026-02-16","2026-02-17","2026-03-23","2026-03-24","2026-04-02","2026-04-03","2026-05-01","2026-05-25","2026-06-15","2026-07-09","2026-07-10","2026-08-17","2026-10-12","2026-11-23","2026-12-07","2026-12-08","2026-12-25","2026-12-31",
+  // 2027 en adelante: APROXIMADOS (fijos + feriados móviles estimados). Revisar cuando se publique el calendario oficial.
+  "2027-01-01","2027-02-08","2027-02-09","2027-03-24","2027-03-25","2027-03-26","2027-04-02","2027-05-01","2027-05-25","2027-06-17","2027-06-20","2027-07-09","2027-08-16","2027-10-11","2027-11-22","2027-12-08","2027-12-25",
+  "2028-01-01","2028-02-28","2028-02-29","2028-03-24","2028-04-13","2028-04-14","2028-05-01","2028-05-25","2028-06-17","2028-06-20","2028-07-09","2028-08-21","2028-10-09","2028-11-20","2028-12-08","2028-12-25",
+  "2029-01-01","2029-02-12","2029-02-13","2029-03-24","2029-03-29","2029-03-30","2029-04-02","2029-05-01","2029-05-25"]);
 
-    function parseDateISO(s) {
-        const [y,m,d] = s.split('-').map(Number);
-        return new Date(y, m-1, d);
-    }
-    function toISO(d) {
-        const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
-        return `${y}-${m}-${day}`;
-    }
-    function isBusinessDay(d) {
-        const dow = d.getDay();
-        return dow !== 0 && dow !== 6 && !FERIADOS.has(toISO(d));
-    }
-    function workday(start, daysToAdd) {
-        let d = new Date(start);
-        let added = 0;
-        while (added < daysToAdd) {
-            d.setDate(d.getDate()+1);
-            if (isBusinessDay(d)) added++;
-        }
-        return d;
-    }
-    function days360(d1, d2) {
-        let day1 = Math.min(d1.getDate(), 30);
-        let day2 = d2.getDate();
-        if (day2 === 31 && day1 === 30) day2 = 30;
-        return (d2.getFullYear()-d1.getFullYear())*360 + (d2.getMonth()-d1.getMonth())*30 + (day2-day1);
-    }
+const MS_DIA = 86400000;
+function parseDateISO(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+function toISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function isBusinessDay(d) { const w = d.getDay(); return w !== 0 && w !== 6 && !FERIADOS.has(toISO(d)); }
+// n > 0 hacia adelante, n < 0 hacia atrás (días hábiles)
+function workday(start, n) {
+  const d = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const paso = n >= 0 ? 1 : -1;
+  let hechos = 0;
+  while (hechos < Math.abs(n)) { d.setDate(d.getDate() + paso); if (isBusinessDay(d)) hechos++; }
+  return d;
+}
+function days360(d1, d2) {
+  const day1 = Math.min(d1.getDate(), 30);
+  let day2 = d2.getDate();
+  if (day2 === 31 && day1 === 30) day2 = 30;
+  return (d2.getFullYear() - d1.getFullYear()) * 360 + (d2.getMonth() - d1.getMonth()) * 30 + (day2 - day1);
+}
+function diffDias(a, b) { return Math.round((b - a) / MS_DIA); }
 
-    function xirr(cashflows, dates) {
-        const d0 = dates[0];
-        function npv(rate) {
-            return cashflows.reduce((sum, cf, i) => sum + cf/Math.pow(1+rate, (dates[i]-d0)/(1000*60*60*24)/365), 0);
-        }
-        function dnpv(rate) {
-            return cashflows.reduce((sum, cf, i) => {
-                const t = (dates[i]-d0)/(1000*60*60*24)/365;
-                return sum - t*cf/Math.pow(1+rate, t+1);
-            }, 0);
-        }
-        let rate = 0.1;
-        for (let i=0;i<100;i++) {
-            const f = npv(rate), fp = dnpv(rate);
-            if (Math.abs(fp) < 1e-12) break;
-            let newRate = rate - f/fp;
-            if (newRate < -0.99) newRate = (rate-0.99)/2;
-            if (Math.abs(newRate-rate) < 1e-10) { rate = newRate; break; }
-            rate = newRate;
-        }
-        return rate;
-    }
+function xirr(cfs, dts) {
+  const d0 = dts[0];
+  const t = dts.map(d => diffDias(d0, d) / 365);
+  const npv = r => cfs.reduce((s, c, i) => s + c / Math.pow(1 + r, t[i]), 0);
+  const dnpv = r => cfs.reduce((s, c, i) => s - t[i] * c / Math.pow(1 + r, t[i] + 1), 0);
+  let r = 0.1;
+  for (let i = 0; i < 200; i++) {
+    const f = npv(r), fp = dnpv(r);
+    if (Math.abs(fp) < 1e-14) break;
+    let n = r - f / fp;
+    if (n < -0.99) n = (r - 0.99) / 2;
+    if (Math.abs(n - r) < 1e-12) { r = n; break; }
+    r = n;
+  }
+  return r;
+}
 
-    function tasaVigente(bono, fecha) {
-        if (bono.tabla) {
-            let tasa = bono.tabla[0][1];
-            for (const [desde, t] of bono.tabla) {
-                if (parseDateISO(desde) <= fecha) tasa = t; else break;
-            }
-            return tasa;
-        }
-        return bono.cupon;
-    }
+// ---------- CER ----------
+const CER_FECHAS = Object.keys(window.CER_SERIE).sort();
+const CER_ULTIMA = CER_FECHAS[CER_FECHAS.length - 1];
+const CER_ULTIMO_VALOR = window.CER_SERIE[CER_ULTIMA];
+// CER del día d (serie publicada; más allá de la última fecha se proyecta con inflación mensual m, geométrico diario)
+function cerEn(d, m) {
+  const k = toISO(d);
+  if (k in window.CER_SERIE) return window.CER_SERIE[k];
+  if (k > CER_ULTIMA) {
+    const dias = diffDias(parseDateISO(CER_ULTIMA), d);
+    return CER_ULTIMO_VALOR * Math.pow(1 + (m || 0), dias / 30.4375);
+  }
+  return null;
+}
+// CER de referencia: 10 días hábiles antes de la fecha
+function cerRef(d, m) { return cerEn(workday(d, -10), m); }
 
-    function calcularBono(ticker, precioUsd, fechaLiq) {
-        const bono = BONOS[ticker];
-        const sched = bono.sched;
+// ---------- Cronograma ----------
+function tasaEn(b, fecha) {
+  let t = b.tasas[0][1];
+  for (const [desde, v] of b.tasas) if (parseDateISO(desde) <= fecha) t = v;
+  return t;
+}
+// Devuelve [{f: Date, vr: residual previo, renta, amort}] por 100 VN originales (sin ajustar por CER)
+function cronograma(tk) {
+  const b = window.BONOS_CER[tk];
+  const vto = parseDateISO(b.vto);
+  if (b.zero) return [{ f: vto, vr: 100, renta: 0, amort: 100, residualPost: 0 }];
+  const out = [];
+  let prev = parseDateISO(b.anchor);
+  let res = b.resAnchor;
+  const desdeAm = parseDateISO(b.amort.desde);
+  let y = prev.getFullYear();
+  const fechas = [];
+  for (; y <= vto.getFullYear() + 1; y++) {
+    b.pares.forEach(([m, d]) => fechas.push(new Date(y, m - 1, d)));
+  }
+  if (!fechas.some(x => x.getTime() === vto.getTime())) fechas.push(vto);
+  fechas.sort((a, c) => a - c);
+  for (const f of fechas) {
+    if (f <= prev) continue;
+    if (res <= 1e-9) break;
+    const tasa = tasaEn(b, f);
+    const renta = res * tasa * days360(prev, f) / 360;
+    let am = f >= desdeAm ? Math.min(b.amort.pct, res) : 0;
+    const esUltima = f >= vto;
+    if (esUltima) am = res;
+    out.push({ f, vr: res, renta, amort: am, residualPost: res - am });
+    res -= am; prev = f;
+    if (esUltima) break;
+  }
+  return out;
+}
 
-        const cfs = [-precioUsd];
-        const dts = [fechaLiq];
-        for (const [fechaStr, vr, renta, amort, total] of sched) {
-            const f = parseDateISO(fechaStr);
-            if (f > fechaLiq) { cfs.push(total); dts.push(f); }
-        }
+// ---------- Cálculo de un bono ----------
+function liquidacionCER(fechaLiq, m) { return cerRef(fechaLiq, m); }
 
-        const tirEfectiva = xirr(cfs, dts);
-        const tirNominal = (Math.pow(1+tirEfectiva, 0.5) - 1) * 2;
+// Flujos futuros en pesos: modo 'real' (CER congelado en CER de liquidación) o 'proy' (CER proyectado en cada pago)
+function flujosFuturos(tk, fechaLiq, m, modo) {
+  const b = window.BONOS_CER[tk];
+  const cerLiq = cerRef(fechaLiq, m);
+  return cronograma(tk).filter(x => x.f > fechaLiq).map(x => {
+    const cer = modo === 'real' ? cerLiq : cerRef(x.f, m);
+    const k = cer / b.base;
+    return { f: x.f, vr: x.vr, renta: x.renta, amort: x.amort, cer, rentaPesos: x.renta * k, amortPesos: x.amort * k, total: (x.renta + x.amort) * k };
+  });
+}
 
-        let valorResidual = sched[0][1];
-        let fechaCuponAnterior = parseDateISO(sched[0][0]);
-        for (const [fechaStr, vr] of sched) {
-            const f = parseDateISO(fechaStr);
-            if (f <= fechaLiq) { valorResidual = vr; fechaCuponAnterior = f; } else break;
-        }
+function precioATir(tk, tir, fechaLiq, m) {
+  let pv = 0;
+  flujosFuturos(tk, fechaLiq, m, 'real').forEach(x => { pv += x.total / Math.pow(1 + tir, diffDias(fechaLiq, x.f) / 365); });
+  return pv;
+}
 
-        const tasa = tasaVigente(bono, fechaLiq);
-        const diasTranscurridos = fechaCuponAnterior.getTime() === fechaLiq.getTime() ? 0 : days360(fechaCuponAnterior, fechaLiq);
-        const interesesCorridos = (valorResidual/100) * tasa * diasTranscurridos / bono.base * 100;
-        const valorTecnico = valorResidual + interesesCorridos;
-        const paridad = (precioUsd/valorTecnico)*100;
-        const currentYield = (tasa*100/precioUsd)*100;
+function calcularBonoCER(tk, precio, fechaLiq, m) {
+  const b = window.BONOS_CER[tk];
+  const cerLiq = cerRef(fechaLiq, m);
+  const fr = flujosFuturos(tk, fechaLiq, m, 'real');
+  const fp = flujosFuturos(tk, fechaLiq, m, 'proy');
+  const dts = [fechaLiq, ...fr.map(x => x.f)];
+  const tirReal = xirr([-precio, ...fr.map(x => x.total)], dts);
+  const tirProy = xirr([-precio, ...fp.map(x => x.total)], dts);
 
-        let num=0, den=0;
-        for (const [fechaStr, vr, renta, amort, total] of sched) {
-            const f = parseDateISO(fechaStr);
-            if (f > fechaLiq) {
-                const t = (f-fechaLiq)/(1000*60*60*24*365);
-                const pv = total/Math.pow(1+tirEfectiva, t);
-                num += pv*t; den += pv;
-            }
-        }
-        const durationModificada = (num/den) / (1+tirEfectiva/bono.freq);
+  // Duration (Macaulay), modificada y convexidad sobre flujos reales
+  let num = 0, den = 0, cs = 0;
+  fr.forEach(x => {
+    const t = diffDias(fechaLiq, x.f) / 365;
+    const pv = x.total / Math.pow(1 + tirReal, t);
+    num += pv * t; den += pv;
+    cs += x.total * t * (t + 1) / Math.pow(1 + tirReal, t + 2);
+  });
+  const duration = num / den;
+  const durMod = duration / (1 + tirReal);
+  const convexidad = cs / den;
 
-        return { tirEfectiva, tirNominal, valorResidual, interesesCorridos, valorTecnico, paridad, durationModificada, currentYield, diasTranscurridos };
-    }
+  // Valor residual, intereses corridos, valor técnico, paridad
+  const sched = cronograma(tk);
+  let res, prevF, tasa;
+  if (b.zero) { res = 100; prevF = null; tasa = 0; }
+  else {
+    const pasados = sched.filter(x => x.f <= fechaLiq);
+    if (pasados.length) { const u = pasados[pasados.length - 1]; res = u.residualPost; prevF = u.f; }
+    else { res = b.resAnchor; prevF = parseDateISO(b.anchor); }
+    tasa = tasaEn(b, prevF);
+  }
+  const k = cerLiq / b.base;
+  const valorPar = res * k;
+  const ic = b.zero ? 0 : res * tasa * (prevF.getTime() === fechaLiq.getTime() ? 0 : days360(prevF, fechaLiq)) / 360 * k;
+  const valorTecnico = valorPar + ic;
+  const paridad = precio / valorTecnico * 100;
+  const proximo = fr.length ? fr[0].f : null;
+  return { tirReal, tirProy, duration, durMod, convexidad, cerLiq, valorPar, interesesCorridos: ic, valorTecnico, paridad,
+           precio, residual: res, proximo, flujos: fp, flujosReal: fr, factor: k };
+}
 
-    function obtenerFechaLiquidacion(plazoTipo) {
-        const hoy = new Date();
-        hoy.setHours(0,0,0,0);
-        if (plazoTipo === 'CI') {
-            return isBusinessDay(hoy) ? hoy : workday(hoy, 1);
-        }
-        return workday(hoy, 1);
-    }
+// Fecha de liquidación: CI (hoy / próximo hábil) o 24HS (T+1)
+function fechaLiquidacion(tipo, hoy) {
+  const h = hoy ? new Date(hoy) : new Date();
+  h.setHours(0, 0, 0, 0);
+  if (tipo === 'CI') return isBusinessDay(h) ? h : workday(h, 1);
+  return workday(h, 1);
+}
+// </ENGINE>
 
-    function fmtPct(v) { return (v*100).toFixed(2) + '%'; }
-    function fmtNum(v) { return v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
-    function renderTodo() {
-        const tc = parseFloat(document.getElementById('tcVal').value) || 1;
-        const plazoTipo = document.getElementById('plazoLiq').value;
-        const fechaLiq = obtenerFechaLiquidacion(plazoTipo);
-        document.getElementById('fechaLiqStatus').textContent = `Fecha de liquidación: ${toISO(fechaLiq).split('-').reverse().join('/')}`;
+// ============ UI ============
+const TARGETS = [0, 0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40];
+const TICKERS = Object.keys(window.BONOS_CER);
+const PX = Object.assign({}, window.PRECIOS_CER);
+const VAR = {};
+let sortKey = 'vto', sortDir = 1;
+let resultados = {};
+let detalleTicker = null;
 
-        const resultadosUsd = {};
+const COLS = [
+  ['vto', 'Vencim.', 'vto'], ['tk', 'Ticker', 'str'], ['fam', 'Familia', 'str'], ['precio', 'Precio c/100 VN', 'num'],
+  ['var', 'Var. Diaria', 'num'], ['paridad', 'Paridad', 'num'], ['tirReal', 'TIR Real (CER cte.)', 'num'],
+  ['tirProy', 'TIR Proyectada', 'num'], ['durMod', 'Duration Mod.', 'num'], ['duration', 'Duration', 'num'],
+  ['conv', 'Convex.', 'num'], ['vtec', 'Valor Técnico', 'num'], ['prox', 'Próx. Pago', 'vto'], ['dias', 'Días', 'num']
+];
 
-        TICKERS.forEach(t => {
-            const row = document.querySelector(`tr[data-ticker="${t}"]`);
-            const precioPesos = parseFloat(row.querySelector('.precio-pesos').value) || 0;
-            const precioUsd = parseFloat(row.querySelector('.precio-usd').value) || 0;
+function fmtPct(v) { return isFinite(v) ? (v * 100).toFixed(2).replace('.', ',') + '%' : '-'; }
+function fmtNum(v, d) { d = d == null ? 2 : d; return isFinite(v) ? v.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '-'; }
+function fmtFecha(d) { return d ? toISO(d).split('-').reverse().join('/') : '-'; }
+function escHtml(x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-            const rPesos = calcularBono(t, precioPesos/tc, fechaLiq);
-            const rUsd = calcularBono(t, precioUsd, fechaLiq);
-            resultadosUsd[t] = rUsd;
+function contexto() {
+  const m = (parseFloat(document.getElementById('inflMensual').value) || 0) / 100;
+  const fechaLiq = fechaLiquidacion(document.getElementById('plazoLiq').value);
+  return { m, fechaLiq };
+}
 
-            row.querySelector('.paridad-pesos').textContent = fmtNum(rPesos.paridad);
-            row.querySelector('.tir-ef-pesos').textContent = fmtPct(rPesos.tirEfectiva);
-            row.querySelector('.tir-nom-pesos').textContent = fmtPct(rPesos.tirNominal);
-            row.querySelector('.paridad-usd').textContent = fmtNum(rUsd.paridad);
-            row.querySelector('.tir-ef-usd').textContent = fmtPct(rUsd.tirEfectiva);
-            row.querySelector('.dm').textContent = rUsd.durationModificada.toFixed(2);
-        });
+function construirEncabezados() {
+  document.getElementById('theadRow').innerHTML = COLS.map(c =>
+    `<th class="sortable" data-k="${c[0]}" title="Ordenar">${c[1]} <span class="sort-arrow" id="arr_${c[0]}">⇅</span></th>`).join('') + '<th></th>';
+  document.querySelectorAll('#theadRow th.sortable').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+    renderTabla();
+  });
+  document.getElementById('theadSens').innerHTML = '<th>Bono</th><th>TIR Real</th><th>Duration</th>' +
+    TARGETS.map(t => `<th>${(t * 100).toFixed(1).replace('.', ',')}%</th>`).join('');
+}
 
-        // Primera pasada: calcular todos los valores de sensibilidad para el mapa de calor
-        const todasLasSens = [];
-        const valoresPorTicker = {};
-        TICKERS.forEach(t => {
-            const r = resultadosUsd[t];
-            const vals = TARGETS.map(target => -r.durationModificada * (target - r.tirEfectiva));
-            valoresPorTicker[t] = vals;
-            todasLasSens.push(...vals);
-        });
-        const minSens = Math.min(...todasLasSens);
-        const maxSens = Math.max(...todasLasSens);
+function calcularTodo() {
+  const { m, fechaLiq } = contexto();
+  resultados = {};
+  TICKERS.forEach(t => {
+    const px = PX[t];
+    if (!(px > 0)) return;
+    try { resultados[t] = calcularBonoCER(t, px, fechaLiq, m); } catch (e) { console.log('Error calculando', t, e); }
+  });
+  return { m, fechaLiq };
+}
 
-        function colorHeatmap(v) {
-            // Escala de 3 colores tipo Excel: rojo (min) -> amarillo (medio) -> verde (max)
-            const rojo = [248,105,107];
-            const amarillo = [255,235,132];
-            const verde = [99,190,123];
+function valorOrden(t, k) {
+  const b = window.BONOS_CER[t], r = resultados[t];
+  switch (k) {
+    case 'vto': return b.vto; case 'tk': return t; case 'fam': return b.fam; case 'precio': return PX[t];
+    case 'var': return VAR[t]; case 'paridad': return r && r.paridad; case 'tirReal': return r && r.tirReal;
+    case 'tirProy': return r && r.tirProy; case 'durMod': return r && r.durMod; case 'duration': return r && r.duration;
+    case 'conv': return r && r.convexidad; case 'vtec': return r && r.valorTecnico;
+    case 'prox': return r && r.proximo ? toISO(r.proximo) : null;
+    case 'dias': return r && r.proximo ? diffDias(contexto().fechaLiq, r.proximo) : null;
+  }
+}
 
-            function lerp(c1, c2, t) {
-                return [
-                    Math.round(c1[0] + (c2[0]-c1[0])*t),
-                    Math.round(c1[1] + (c2[1]-c1[1])*t),
-                    Math.round(c1[2] + (c2[2]-c1[2])*t)
-                ];
-            }
+function renderTabla() {
+  const q = document.getElementById('busc').value.trim().toLowerCase();
+  let lista = TICKERS.filter(t => !q || t.toLowerCase().includes(q) || window.BONOS_CER[t].fam.toLowerCase().includes(q));
+  lista.sort((a, b) => {
+    const x = valorOrden(a, sortKey), y = valorOrden(b, sortKey);
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (x < y ? -1 : x > y ? 1 : 0) * sortDir;
+  });
+  document.querySelectorAll('.sort-arrow').forEach(a => { a.classList.remove('activa'); a.textContent = '⇅'; });
+  const arr = document.getElementById('arr_' + sortKey);
+  if (arr) { arr.classList.add('activa'); arr.textContent = sortDir === 1 ? '▲' : '▼'; }
 
-            let rango;
-            if (v <= 0) {
-                const t = minSens < 0 ? Math.min(v/minSens, 1) : 0; // 0 en v=0, 1 en v=minSens
-                rango = lerp(amarillo, rojo, t);
-            } else {
-                const t = maxSens > 0 ? Math.min(v/maxSens, 1) : 0; // 0 en v=0, 1 en v=maxSens
-                rango = lerp(amarillo, verde, t);
-            }
-            return `rgb(${rango[0]},${rango[1]},${rango[2]})`;
-        }
+  const { fechaLiq } = contexto();
+  const tb = document.getElementById('tabla');
+  tb.innerHTML = '';
+  lista.forEach(t => {
+    const b = window.BONOS_CER[t], r = resultados[t];
+    const v = VAR[t];
+    const varTxt = typeof v === 'number' ? (v > 0 ? '+' : '') + v.toFixed(2).replace('.', ',') + '%' : '-';
+    const varCls = typeof v === 'number' ? (v > 0 ? 'var-pos' : v < 0 ? 'var-neg' : '') : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="vto">${fmtFecha(parseDateISO(b.vto))}</td>
+      <td class="ticker ticker-btn" onclick="abrirDetalle('${t}')">${t}</td>
+      <td>${b.fam}</td>
+      <td><input type="number" class="editable-input" style="width:90px" step="any" value="${PX[t] || ''}" onchange="cambiarPrecio('${t}', this.value)"></td>
+      <td class="${varCls}">${varTxt}</td>
+      <td>${r ? fmtNum(r.paridad) + '%' : '-'}</td>
+      <td><b>${r ? fmtPct(r.tirReal) : '-'}</b></td>
+      <td>${r ? fmtPct(r.tirProy) : '-'}</td>
+      <td>${r ? fmtNum(r.durMod) : '-'}</td>
+      <td>${r ? fmtNum(r.duration) : '-'}</td>
+      <td>${r ? fmtNum(r.convexidad) : '-'}</td>
+      <td>${r ? fmtNum(r.valorTecnico) : '-'}</td>
+      <td>${r && r.proximo ? fmtFecha(r.proximo) : '-'}</td>
+      <td>${r && r.proximo ? diffDias(fechaLiq, r.proximo) : '-'}</td>
+      <td><button class="btn-detalle" onclick="abrirDetalle('${t}')">Detalle</button></td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('chipCount').textContent = lista.length + ' instrumentos';
+}
 
-        TICKERS.forEach(t => {
-            const row = document.querySelector(`tr[data-ticker-sens="${t}"]`);
-            const r = resultadosUsd[t];
-            row.querySelector('.tir-actual-sens').textContent = fmtPct(r.tirEfectiva);
-            row.querySelector('.dm-sens').textContent = r.durationModificada.toFixed(2);
-            const cells = row.querySelectorAll('.sens');
-            cells.forEach((cell, i) => {
-                const sens = valoresPorTicker[t][i];
-                cell.textContent = fmtPct(sens);
-                cell.style.backgroundColor = colorHeatmap(sens);
-                cell.style.color = '#1e293b';
-            });
-        });
-    }
+function colorHeat(v, minS, maxS) {
+  const rojo = [248, 105, 107], amarillo = [255, 235, 132], verde = [99, 190, 123];
+  const lerp = (a, b, k) => a.map((x, i) => Math.round(x + (b[i] - x) * k));
+  const c = v <= 0 ? lerp(amarillo, rojo, minS < 0 ? Math.min(v / minS, 1) : 0) : lerp(amarillo, verde, maxS > 0 ? Math.min(v / maxS, 1) : 0);
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
 
-    // ============ MODAL DE DETALLE POR BONO ============
-    let detalleTickerActual = null;
-    let detalleMonedaActual = 'pesos';
+function renderSens(fechaLiq, m) {
+  const valores = {}, todos = [];
+  TICKERS.forEach(t => {
+    const r = resultados[t];
+    if (!r || !(r.precio > 0)) return;
+    const vals = TARGETS.map(g => precioATir(t, g, fechaLiq, m) / r.precio - 1);
+    valores[t] = vals; todos.push(...vals);
+  });
+  const minS = todos.length ? Math.min(...todos) : 0, maxS = todos.length ? Math.max(...todos) : 0;
+  const orden = TICKERS.slice().sort((a, b) => window.BONOS_CER[a].vto < window.BONOS_CER[b].vto ? -1 : 1);
+  document.getElementById('sens').innerHTML = orden.map(t => {
+    const r = resultados[t];
+    if (!valores[t]) return `<tr><td class="ticker">${t}</td><td>-</td><td>-</td>${TARGETS.map(() => '<td class="sens">-</td>').join('')}</tr>`;
+    return `<tr><td class="ticker">${t}</td><td>${fmtPct(r.tirReal)}</td><td>${fmtNum(r.duration)}</td>` +
+      valores[t].map(s => `<td class="sens" style="background:${colorHeat(s, minS, maxS)};color:#1e293b">${fmtPct(s)}</td>`).join('') + '</tr>';
+  }).join('');
+}
 
-    function abrirDetalle(ticker) {
-        detalleTickerActual = ticker;
-        detalleMonedaActual = 'pesos';
-        document.getElementById('modalTabBtnPesos').classList.add('active');
-        document.getElementById('modalTabBtnUsd').classList.remove('active');
-        document.getElementById('tenenciaNominal').value = 100;
-        renderDetalle();
-        document.getElementById('modalOverlay').classList.add('open');
-    }
+function renderTodo() {
+  const { m, fechaLiq } = calcularTodo();
+  document.getElementById('fechaLiqStatus').textContent = 'Fecha de liquidación: ' + fmtFecha(fechaLiq) +
+    ' | CER de liquidación (10 días hábiles antes): ' + fmtNum(cerRef(fechaLiq, m), 5);
+  document.getElementById('cerStatus').textContent = 'Serie CER cargada hasta ' + fmtFecha(parseDateISO(CER_ULTIMA)) +
+    ' (' + fmtNum(CER_ULTIMO_VALOR, 4) + '). Más allá de esa fecha se proyecta con la inflación mensual ingresada.';
+  renderTabla();
+  renderSens(fechaLiq, m);
+  if (detalleTicker && document.getElementById('modalOverlay').classList.contains('open')) renderDetalle();
+}
 
-    function cambiarMonedaDetalle(moneda) {
-        detalleMonedaActual = moneda;
-        document.getElementById('modalTabBtnPesos').classList.toggle('active', moneda === 'pesos');
-        document.getElementById('modalTabBtnUsd').classList.toggle('active', moneda === 'usd');
-        renderDetalle();
-    }
+function cambiarPrecio(t, v) {
+  const n = parseFloat(v);
+  if (n > 0) PX[t] = n; else delete PX[t];
+  renderTodo();
+}
 
-    function renderDetalle() {
-        const ticker = detalleTickerActual;
-        const tc = parseFloat(document.getElementById('tcVal').value) || 1;
-        const plazoTipo = document.getElementById('plazoLiq').value;
-        const fechaLiq = obtenerFechaLiquidacion(plazoTipo);
+function renderPendientes() {
+  const p = window.BONOS_CER_PENDIENTES || {};
+  const ks = Object.keys(p);
+  const box = document.getElementById('pendientesBox');
+  if (!ks.length) { box.style.display = 'none'; return; }
+  box.innerHTML = '<b>Pendientes de carga</b> (falta el "valor de emisión" / base CER de cada uno): ' +
+    ks.map(k => `<span class="chip-pend">${k}</span>`).join('');
+}
 
-        const rowTabla = document.querySelector(`tr[data-ticker="${ticker}"]`);
-        const precioPesos = parseFloat(rowTabla.querySelector('.precio-pesos').value) || 0;
-        const precioUsdInput = parseFloat(rowTabla.querySelector('.precio-usd').value) || 0;
+// ============ DETALLE ============
+function box(l, v) { return `<div class="box"><div class="label">${l}</div><div class="value">${v}</div></div>`; }
 
-        const esPesos = detalleMonedaActual === 'pesos';
-        const precioUsdCalc = esPesos ? precioPesos/tc : precioUsdInput;
-        const precioMostrado = esPesos ? precioPesos : precioUsdInput;
+function abrirDetalle(t) {
+  detalleTicker = t;
+  document.getElementById('modalOverlay').classList.add('open');
+  renderDetalle();
+}
+function cerrarDetalle() { document.getElementById('modalOverlay').classList.remove('open'); }
 
-        const r = calcularBono(ticker, precioUsdCalc, fechaLiq);
-        const tickerLabel = esPesos ? ticker : ticker+'D';
+function renderDetalle() {
+  const t = detalleTicker, b = window.BONOS_CER[t], r = resultados[t];
+  document.getElementById('modalTitulo').textContent = t + ' — ' + b.fam + (b.zero ? ' (cupón cero)' : '');
+  if (!r) {
+    ['modalRentabilidad', 'modalValuacion', 'modalDatosBono', 'modalFlujo'].forEach(id => document.getElementById(id).innerHTML = '');
+    document.getElementById('modalRentabilidad').innerHTML = box('Sin precio', 'Cargá un precio');
+    return;
+  }
+  document.getElementById('modalRentabilidad').innerHTML =
+    box('TIR real (CER cte.)', fmtPct(r.tirReal)) + box('TIR proyectada', fmtPct(r.tirProy)) +
+    box('Duration', fmtNum(r.duration)) + box('Duration mod.', fmtNum(r.durMod)) + box('Convexidad', fmtNum(r.convexidad));
+  document.getElementById('modalValuacion').innerHTML =
+    box('Precio sucio', fmtNum(r.precio)) + box('Valor par', fmtNum(r.valorPar)) + box('Int. corridos', fmtNum(r.interesesCorridos)) +
+    box('Valor técnico', fmtNum(r.valorTecnico)) + box('Paridad', fmtNum(r.paridad) + '%');
+  document.getElementById('modalDatosBono').innerHTML =
+    box('Vencimiento', fmtFecha(parseDateISO(b.vto))) + box('Base CER (emisión)', fmtNum(b.base, 4)) +
+    box('CER liquidación', fmtNum(r.cerLiq, 5)) + box('Factor CER', fmtNum(r.factor, 4)) +
+    box('Valor residual', fmtNum(r.residual) + '%') +
+    box('Cupón', b.zero ? 'Cero' : (b.tasas.length > 1 ? b.tasas.map(x => (x[1] * 100).toFixed(2) + '%').join(' → ') : (b.tasas[0][1] * 100).toFixed(2) + '%')) +
+    box('Próx. pago', r.proximo ? fmtFecha(r.proximo) : '-');
+  renderFlujoTabla();
+}
 
-        document.getElementById('modalTitulo').textContent = `${tickerLabel} — Detalle del flujo de fondos (${esPesos?'Pesos':'Dólares'})`;
+function renderFlujoTabla() {
+  if (!detalleTicker || !resultados[detalleTicker]) return;
+  const r = resultados[detalleTicker];
+  const factor = (parseFloat(document.getElementById('tenenciaNominal').value) || 0) / 100;
+  document.getElementById('modalFlujo').innerHTML = r.flujos.map(x => `<tr>
+      <td>${fmtFecha(x.f)}</td><td>${fmtNum(x.vr)}</td><td>${fmtNum(x.renta, 4)}</td><td>${fmtNum(x.amort)}</td>
+      <td>${fmtNum(x.cer, 4)}</td><td>${fmtNum(x.rentaPesos * factor)}</td><td>${fmtNum(x.amortPesos * factor)}</td><td><b>${fmtNum(x.total * factor)}</b></td></tr>`).join('');
+}
 
-        document.getElementById('modalRentabilidad').innerHTML = `
-            <div class="box"><div class="label">TIR Efectiva</div><div class="value">${fmtPct(r.tirEfectiva)}</div></div>
-            <div class="box"><div class="label">TIR Nominal</div><div class="value">${fmtPct(r.tirNominal)}</div></div>
-            <div class="box"><div class="label">Current Yield</div><div class="value">${fmtPct(r.currentYield/100)}</div></div>
-        `;
-
-        document.getElementById('modalValuacion').innerHTML = `
-            <div class="box"><div class="label">Valor Residual</div><div class="value">${fmtNum(r.valorResidual)}</div></div>
-            <div class="box"><div class="label">Valor Par</div><div class="value">${fmtNum(r.valorResidual)}</div></div>
-            <div class="box"><div class="label">Int. Corridos (${r.diasTranscurridos} días)</div><div class="value">${fmtNum(r.interesesCorridos)}</div></div>
-            <div class="box"><div class="label">Valor Técnico</div><div class="value">${fmtNum(r.valorTecnico)}</div></div>
-            <div class="box"><div class="label">Paridad</div><div class="value">${fmtNum(r.paridad)}</div></div>
-            <div class="box"><div class="label">Duration Mod.</div><div class="value">${r.durationModificada.toFixed(4)}</div></div>
-        `;
-        document.getElementById('modalPrecioBox').innerHTML = `
-            <div class="box"><div class="label">Precio ${esPesos?'$':'USD'}</div><div class="value">${fmtNum(precioMostrado)}</div></div>
-        `;
-
-        const bonoInfo = BONOS[ticker];
-        const cuponTexto = bonoInfo.tabla
-            ? `Escalonado (vigente: ${(tasaVigente(bonoInfo, fechaLiq)*100).toFixed(3)}%)`
-            : `${(bonoInfo.cupon*100).toFixed(2)}%`;
-        document.getElementById('modalDatosBono').innerHTML = `
-            <div class="box"><div class="label">Moneda de Emisión</div><div class="value" style="font-size:13px;">${bonoInfo.moneda}</div></div>
-            <div class="box"><div class="label">Cupón Tasa Fija</div><div class="value" style="font-size:13px;">${cuponTexto}</div></div>
-            <div class="box"><div class="label">Call</div><div class="value" style="font-size:13px;">${bonoInfo.call}</div></div>
-            <div class="box"><div class="label">Monto Nominal Vigente</div><div class="value" style="font-size:12px;">${bonoInfo.monto}</div></div>
-            <div class="box"><div class="label">Fecha de Emisión</div><div class="value" style="font-size:13px;">${bonoInfo.emision.split('-').reverse().join('/')}</div></div>
-            <div class="box"><div class="label">Fecha Vencimiento</div><div class="value" style="font-size:13px;">${bonoInfo.vencimiento.split('-').reverse().join('/')}</div></div>
-            <div class="box"><div class="label">Frec. Anual Pago Renta</div><div class="value" style="font-size:13px;">${bonoInfo.freq}</div></div>
-            <div class="box"><div class="label">Base Cálculo Intereses</div><div class="value" style="font-size:13px;">${bonoInfo.base}</div></div>
-        `;
-
-        renderFlujoTabla();
-    }
-
-    function renderFlujoTabla() {
-        const ticker = detalleTickerActual;
-        const bono = BONOS[ticker];
-        const plazoTipo = document.getElementById('plazoLiq').value;
-        const fechaLiq = obtenerFechaLiquidacion(plazoTipo);
-        const tenencia = parseFloat(document.getElementById('tenenciaNominal').value) || 0;
-        const factor = tenencia / 100;
-
-        const tbody = document.getElementById('modalFlujo');
-        tbody.innerHTML = '';
-        bono.sched.forEach(([fechaStr, vr, renta, amort, total]) => {
-            const f = parseDateISO(fechaStr);
-            const esPasado = f <= fechaLiq;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="${esPasado?'pasado':''}">${fechaStr.split('-').reverse().join('/')}</td>
-                <td class="${esPasado?'pasado':''}">${fmtNum(vr)}</td>
-                <td class="${esPasado?'pasado':''}">${fmtNum(renta*factor)}</td>
-                <td class="${esPasado?'pasado':''}">${fmtNum(amort*factor)}</td>
-                <td class="${esPasado?'pasado':''}">${fmtNum(total*factor)}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function cerrarDetalle() {
-        document.getElementById('modalOverlay').classList.remove('open');
-    }
-
-    async function obtenerDolar() {
-        const status = document.getElementById('mepStatus');
-        const badge = document.getElementById('tcBadge');
-        status.textContent = 'Buscando cotización...';
-        badge.textContent = 'Cargando...';
-        badge.className = 'mep-badge loading';
-
-        try {
-            const res = await fetch('https://api.dolarito.ar/pages/dolar/mep');
-            if (res.ok) {
-                const data = await res.json();
-                const val = data.venta || data.value || data.price;
-                if (val) {
-                    document.getElementById('tcVal').value = Number(val).toFixed(2);
-                    status.textContent = `Actualizado (Dolarito) — venta ${Number(val).toFixed(2)}`;
-                    badge.textContent = 'Dolarito ✓';
-                    badge.className = 'mep-badge';
-                    renderTodo();
-                    return;
-                }
-            }
-            throw new Error('Fallback requerido');
-        } catch (err) {
-            console.log('Dolarito no disponible, probando DolarApi:', err);
-        }
-
-        try {
-            const res = await fetch('https://dolarapi.com/v1/dolares/bolsa');
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.venta) {
-                    document.getElementById('tcVal').value = Number(data.venta).toFixed(2);
-                    status.textContent = `Actualizado (DolarApi) — venta ${Number(data.venta).toFixed(2)}`;
-                    badge.textContent = 'DolarApi ✓';
-                    badge.className = 'mep-badge';
-                    renderTodo();
-                    return;
-                }
-            }
-            throw new Error('Manual requerido');
-        } catch (err) {
-            status.textContent = 'Sin conexión con las APIs, usando valor manual.';
-            badge.textContent = 'Manual';
-            badge.className = 'mep-badge loading';
-        }
-    }
-
-    document.getElementById('tcVal').addEventListener('input', renderTodo);
-    document.getElementById('plazoLiq').addEventListener('change', renderTodo);
-    document.querySelectorAll('.precio-pesos, .precio-usd').forEach(inp => {
-        inp.addEventListener('input', renderTodo);
+// ============ PRECIOS (data912) ============
+async function actualizarPreciosData912() {
+  const btn = document.getElementById('btnData912'), status = document.getElementById('data912Status');
+  btn.disabled = true; status.textContent = 'Buscando precios (beta)...';
+  try {
+    const res = await fetch('https://data912.com/live/arg_bonds');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const lista = Array.isArray(data) ? data : (data.data || []);
+    const mapa = {}, mapaVar = {};
+    lista.forEach(it => {
+      const sym = String(it.symbol || it.ticker || '').toUpperCase();
+      if (!sym) return;
+      let px = parseFloat(it.c);
+      if (!(px > 0)) px = parseFloat(it.px_ask);
+      if (!(px > 0)) px = parseFloat(it.px_bid);
+      if (px > 0) mapa[sym] = px;
+      const pc = parseFloat(it.pct_change);
+      if (isFinite(pc)) mapaVar[sym] = pc;
     });
-
-    obtenerDolar();
+    let ok = 0; const faltan = [];
+    TICKERS.forEach(t => {
+      if (mapa[t]) { PX[t] = mapa[t]; ok++; } else faltan.push(t);
+      if (t in mapaVar) VAR[t] = mapaVar[t]; else delete VAR[t];
+    });
+    if (!ok) throw new Error('Sin datos para los tickers');
+    const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    status.textContent = 'Precios actualizados (beta) ' + hora + ' — ' + ok + ' de ' + TICKERS.length + (faltan.length ? ' | sin dato: ' + faltan.join(', ') : '');
     renderTodo();
+  } catch (err) {
+    console.log('data912 no disponible:', err);
+    status.textContent = 'No se pudo conectar con la fuente de precios; se mantienen los precios cargados.';
+  } finally {
+    btn.disabled = false; reiniciarTemporizador();
+  }
+}
+
+const INTERVALO_SEG = 30;
+let restante = INTERVALO_SEG, temporizadorActivo = true;
+function pintarTemporizador() {
+  const b = document.getElementById('timerBadge');
+  if (temporizadorActivo) { b.textContent = 'Auto ' + restante + 's'; b.className = 'mep-badge'; }
+  else { b.textContent = 'Auto en pausa'; b.className = 'mep-badge loading'; }
+}
+function reiniciarTemporizador() { restante = INTERVALO_SEG; pintarTemporizador(); }
+function toggleTemporizador() { temporizadorActivo = !temporizadorActivo; restante = INTERVALO_SEG; pintarTemporizador(); }
+setInterval(() => {
+  if (!temporizadorActivo || document.hidden) return;
+  restante--;
+  if (restante <= 0) { restante = INTERVALO_SEG; actualizarPreciosData912(); }
+  pintarTemporizador();
+}, 1000);
+
+// ============ DESCARGA (PNG) ============
+async function descargarTabla(id, titulo, archivo) {
+  if (typeof html2canvas === 'undefined') { alert('No se pudo cargar la librería de imágenes. Revisá la conexión y recargá la página.'); return; }
+  const origen = document.getElementById(id);
+  const clon = origen.cloneNode(true);
+  clon.querySelectorAll('.sort-arrow').forEach(e => e.remove());
+  const originales = origen.querySelectorAll('input');
+  clon.querySelectorAll('input').forEach((inp, i) => {
+    const s = document.createElement('span'); s.textContent = originales[i] ? originales[i].value : inp.value; inp.replaceWith(s);
+  });
+  clon.querySelectorAll('tr').forEach(tr => Array.from(tr.children).forEach((c, i, a) => {
+    if (c.querySelector('button')) c.remove();
+    else if (c.tagName === 'TH' && c.textContent.trim() === '' && i === a.length - 1) c.remove();
+  }));
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-100000px;top:0;background:#fff;width:max-content;font-family:"Segoe UI",Tahoma,sans-serif;color:#1e293b;';
+  clon.style.width = 'auto'; wrap.appendChild(clon); document.body.appendChild(wrap);
+  try {
+    const canvas = await html2canvas(wrap, { backgroundColor: '#ffffff', scale: 2 });
+    const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = archivo;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  } catch (e) { console.log(e); alert('No se pudo generar la imagen.'); }
+  finally { document.body.removeChild(wrap); }
+}
+
+construirEncabezados();
+renderPendientes();
+renderTodo();
+actualizarPreciosData912();
 </script>
 
 </body>
