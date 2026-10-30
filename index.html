@@ -432,8 +432,46 @@
         td.pend { color:#94a3b8; }
         .chip-pend { display:inline-block; background:#eef2f7; color:#475569; border-radius:999px; padding:3px 10px; margin:2px; font-size:11px; font-weight:700; }
 
-            .curva-wrap { background:#1e2a47; border-radius:10px; padding:6px; overflow-x:auto; }
+            .curva-wrap { background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:6px; overflow-x:auto; }
         .curva-wrap svg { width:100%; height:auto; display:block; min-width:640px; }
+
+        .tema-btn { position:absolute; right:18px; top:14px; background:#fff; border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:700; cursor:pointer; color:#1a365d; }
+        .header { position:relative; }
+        body.dark { background:#0b1220; color:#e2e8f0; }
+        body.dark .container { background:#111a2e; box-shadow:none; }
+        body.dark .header { border-bottom-color:#25324f; }
+        body.dark .header h1, body.dark .section-title, body.dark .modal-header h2, body.dark .modal-summary .box .value { color:#e2e8f0; }
+        body.dark .advisor-info, body.dark .status-text, body.dark .disclaimer, body.dark .tenencia-leyenda, body.dark .modal-summary .box .label, body.dark .input-group label { color:#94a3b8; }
+        body.dark .controls-grid, body.dark .modal-summary .box { background:#16213a; border-color:#25324f; }
+        body.dark .input-group input, body.dark .input-group select, body.dark .editable-input, body.dark .buscar { background:#0f1a30; color:#e2e8f0; border-color:#2b3b5e; }
+        body.dark .table-container { border-color:#25324f; }
+        body.dark th { background:#1d2f52; }
+        body.dark td { border-bottom-color:#1d2a47; color:#e2e8f0; }
+        body.dark tr:nth-child(even) { background-color:#14203a; }
+        body.dark tr:hover { background-color:#1b2b4d; }
+        body.dark td.ticker { color:#7ea6e8; }
+        body.dark .modal-box { background:#111a2e; }
+        body.dark .modal-header, body.dark .disclaimer { border-color:#25324f; }
+        body.dark .modal-close { color:#94a3b8; }
+        body.dark .chip-count, body.dark .segmented-control { background:#1d2a47; color:#cbd5e1; }
+        body.dark .segmented-btn { color:#94a3b8; }
+        body.dark .segmented-btn.active { background:#2b6cb0; color:#fff; }
+        body.dark .btn-descarga, body.dark .tema-btn { background:#16213a; color:#7ea6e8; border-color:#2b6cb0; }
+        body.dark .aviso-box { background:#2a2410; border-color:#5b4a14; color:#fde68a; }
+        body.dark .aviso-box b { color:#fcd34d; }
+        body.dark .chip-pend { background:#1d2a47; color:#cbd5e1; }
+        body.dark .curva-wrap { background:#1e2a47; border-color:#25324f; }
+        body.dark td.pasado { color:#475569; }
+        .cam-wrap { position:relative; }
+        .cam-btn { background:#fff; border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:15px; cursor:pointer; }
+        .cam-btn:hover { border-color:var(--accent); }
+        .cam-menu { display:none; position:absolute; right:0; top:110%; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.18); padding:6px; z-index:50; min-width:210px; }
+        .cam-menu.open { display:block; }
+        .cam-menu button { display:block; width:100%; text-align:left; background:none; border:none; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; white-space:nowrap; }
+        .cam-menu button:hover { background:#eef2f7; }
+        body.dark .cam-btn, body.dark .cam-menu { background:#16213a; border-color:#2b3b5e; }
+        body.dark .cam-menu button { color:#e2e8f0; }
+        body.dark .cam-menu button:hover { background:#1d2a47; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="cer.js"></script>
@@ -443,6 +481,7 @@
 
 <div class="container">
     <div class="header">
+        <button type="button" class="tema-btn" id="temaBtn" onclick="alternarTema()" title="Cambiar entre modo día y noche">🌙 Noche</button>
         <h1>Calculadora de Bonos CER</h1>
         <div class="advisor-info">Asesor Financiero: Carlos Sauza — Mat. CNV N° 1823</div>
     </div>
@@ -472,9 +511,21 @@
 
     <div class="section-head">
         <div class="section-title">Cuadro Resumido — Bonos y Letras CER</div>
-        <button type="button" class="btn-descarga" onclick="descargarTabla('tablaT', 'Bonos CER', 'bonos_cer.png')">⬇ Descargar cuadro</button>
+        <div class="cam-wrap">
+            <button type="button" class="cam-btn" onclick="toggleCam(this)" title="Imagen">📷</button>
+            <div class="cam-menu">
+                <button type="button" onclick="accionImagen('tabla','jpg')">⬇ Descargar imagen (JPG)</button>
+                <button type="button" onclick="accionImagen('tabla','copiar')">⧉ Copiar imagen</button>
+            </div>
+        </div>
     </div>
     <div class="toolbar">
+        <div class="segmented-control" id="selGrupo">
+            <button type="button" class="segmented-btn active" data-g="todos" onclick="cambiarGrupo('todos')">Todos</button>
+            <button type="button" class="segmented-btn" data-g="tx" onclick="cambiarGrupo('tx')">TX</button>
+            <button type="button" class="segmented-btn" data-g="tzx" onclick="cambiarGrupo('tzx')">TZX y Letras</button>
+            <button type="button" class="segmented-btn" data-g="par" onclick="cambiarGrupo('par')">DICP · PARP · CUAP</button>
+        </div>
         <input type="text" id="busc" class="buscar" placeholder="Buscar ticker o familia..." oninput="renderTodo()">
         <span class="chip-count" id="chipCount"></span>
     </div>
@@ -490,16 +541,22 @@
 
     <div class="section-head">
         <div class="section-title">Curva CER — TIR Actual vs Duration</div>
-        <button type="button" class="btn-descarga" onclick="descargarCurva()">⬇ Descargar curva</button>
+        <div class="cam-wrap">
+            <button type="button" class="cam-btn" onclick="toggleCam(this)" title="Imagen">📷</button>
+            <div class="cam-menu">
+                <button type="button" onclick="accionImagen('curva','jpg')">⬇ Descargar imagen (JPG)</button>
+                <button type="button" onclick="accionImagen('curva','copiar')">⧉ Copiar imagen</button>
+            </div>
+        </div>
     </div>
     <div class="toolbar">
-        <div class="segmented-control" id="selRango">
+        <div class="segmented-control" id="selRango" title="Se aplica cuando el grupo es Todos">
             <button type="button" class="segmented-btn active" data-r="4" onclick="cambiarRango(4)">Hasta 4 años</button>
             <button type="button" class="segmented-btn" data-r="0" onclick="cambiarRango(0)">Todos</button>
         </div>
     </div>
     <div class="curva-wrap" id="curvaWrap"></div>
-    <div class="status-text" style="margin-top:6px;">La línea punteada es la curva de tendencia de los bonos (ajuste logarítmico sobre TIR Actual y Duration). Los instrumentos con duration menor a 0,1 año no entran en el ajuste.</div>
+    <div class="status-text" style="margin-top:6px;">La línea punteada es la tendencia logarítmica (TIR = a + b·ln(duration)) calculada con los instrumentos del gráfico. Los bonos que vencen en menos de 15 días (círculo hueco, ej. TX26) se muestran pero no entran en la tendencia, porque su TIR anualizada no es representativa.</div>
 
     <div class="aviso-box" id="pendientesBox"></div>
     <div class="aviso-box" id="feriadosBox">
@@ -734,6 +791,20 @@ const TICKERS = Object.keys(window.BONOS_CER);
 const PX = Object.assign({}, window.PRECIOS_CER);
 const VAR = {};
 let sortKey = 'vto', sortDir = 1;
+let grupoSel = 'todos';
+const GRUPO_FN = {
+  todos: () => true,
+  tx: t => /^TX\d/.test(t),
+  tzx: t => /^TZX/.test(t) || /^X\d/.test(t),
+  par: t => ['DICP', 'PARP', 'CUAP'].includes(t)
+};
+function cambiarGrupo(g) {
+  grupoSel = g;
+  document.querySelectorAll('#selGrupo .segmented-btn').forEach(b => b.classList.toggle('active', b.dataset.g === g));
+  const sr = document.getElementById('selRango');
+  if (sr) sr.style.opacity = g === 'todos' ? '1' : '.45';
+  renderTabla(); renderCurva();
+}
 let resultados = {};
 let detalleTicker = null;
 
@@ -790,7 +861,7 @@ function valorOrden(t, k) {
 
 function renderTabla() {
   const q = document.getElementById('busc').value.trim().toLowerCase();
-  let lista = TICKERS.filter(t => !q || t.toLowerCase().includes(q) || window.BONOS_CER[t].fam.toLowerCase().includes(q));
+  let lista = TICKERS.filter(t => GRUPO_FN[grupoSel](t) && (!q || t.toLowerCase().includes(q) || window.BONOS_CER[t].fam.toLowerCase().includes(q)));
   lista.sort((a, b) => {
     const x = valorOrden(a, sortKey), y = valorOrden(b, sortKey);
     if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
@@ -831,35 +902,58 @@ function renderTabla() {
 }
 
 let rangoCurva = 4;
+function paleta() {
+  return document.body.classList.contains('dark')
+    ? { bg: '#1e2a47', grid: '#2c3b60', txt: '#8fa3c9', title: '#ffffff', bono: '#7ea6e8', letra: '#4fd1a5', linea: '#3aa0d0', borde: '#101a33' }
+    : { bg: '#ffffff', grid: '#e2e8f0', txt: '#64748b', title: '#1a365d', bono: '#2b6cb0', letra: '#137333', linea: '#d97706', borde: '#ffffff' };
+}
+function aplicarTema(oscuro) {
+  document.body.classList.toggle('dark', oscuro);
+  const b = document.getElementById('temaBtn');
+  if (b) b.textContent = oscuro ? '☀️ Día' : '🌙 Noche';
+}
+function alternarTema() {
+  const oscuro = !document.body.classList.contains('dark');
+  aplicarTema(oscuro);
+  try { localStorage.setItem('cer_tema', oscuro ? 'noche' : 'dia'); } catch (e) {}
+  renderCurva();
+}
 function cambiarRango(r) {
   rangoCurva = r;
   document.querySelectorAll('#selRango .segmented-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.r) === r));
   renderCurva();
 }
 
-// Ajuste por mínimos cuadrados: y = a + b * ln(1 + x)
+// Tendencia logarítmica (como la de Excel/Mesa): y = a + b * ln(x), por mínimos cuadrados
 function ajusteLog(pts) {
-  const n = pts.length;
+  const v = pts.filter(p => p.x > 0);
+  const n = v.length;
   if (n < 3) return null;
   let sx = 0, sy = 0, sxx = 0, sxy = 0;
-  pts.forEach(p => { const x = Math.log(1 + p.x); sx += x; sy += p.y; sxx += x * x; sxy += x * p.y; });
+  v.forEach(p => { const x = Math.log(p.x); sx += x; sy += p.y; sxx += x * x; sxy += x * p.y; });
   const den = n * sxx - sx * sx;
   if (Math.abs(den) < 1e-12) return null;
   const b = (n * sxy - sx * sy) / den, a = (sy - b * sx) / n;
-  return x => a + b * Math.log(1 + x);
+  return x => a + b * Math.log(x);
 }
 
 function renderCurva() {
   const wrap = document.getElementById('curvaWrap');
+  const P = paleta();
   let pts = TICKERS.filter(t => resultados[t]).map(t => ({
     t, x: resultados[t].duration, y: resultados[t].tirReal * 100, lecer: window.BONOS_CER[t].fam === 'LECER'
   }));
-  if (rangoCurva > 0) pts = pts.filter(p => p.x <= rangoCurva);
-  if (!pts.length) { wrap.innerHTML = '<div style="color:#cbd5e1;padding:30px;text-align:center">Sin datos para graficar</div>'; return; }
+  pts = pts.filter(p => GRUPO_FN[grupoSel](p.t));
+  // Los bonos que vencen en menos de 15 días se grafican pero no entran en la curva de tendencia (su TIR anualizada no es representativa; ej. TX26)
+  const hoyLiq = contexto().fechaLiq;
+  pts.forEach(p => { p.corto = diffDias(hoyLiq, parseDateISO(window.BONOS_CER[p.t].vto)) < 15; });
+  const limite = grupoSel === 'todos' ? rangoCurva : 0;
+  if (limite > 0) pts = pts.filter(p => p.x <= limite);
+  if (!pts.length) { wrap.innerHTML = '<div style="color:#64748b;padding:30px;text-align:center">Sin datos para graficar</div>'; return; }
 
   const W = 1200, H = 560, mL = 70, mR = 30, mT = 60, mB = 70;
   const xMaxD = Math.max(...pts.map(p => p.x));
-  const xMax = rangoCurva > 0 ? rangoCurva + 0.15 : Math.ceil(xMaxD + 0.5);
+  const xMax = limite > 0 ? limite + 0.15 : Math.ceil(xMaxD + 0.5);
   // Escala Y según instrumentos con duration >= 0,1; los más cortos (TIR anualizada distorsionada) se topan en el borde
   const base = pts.filter(p => p.x >= 0.1).length ? pts.filter(p => p.x >= 0.1) : pts;
   const yMinD = Math.min(...base.map(p => p.y)), yMaxD = Math.max(...base.map(p => p.y));
@@ -870,24 +964,25 @@ function renderCurva() {
   let g = '';
   const pasoY = (yMax - yMin) > 14 ? 2 : 1;
   for (let y = yMin; y <= yMax; y += pasoY) {
-    g += `<line x1="${mL}" x2="${W - mR}" y1="${py(y)}" y2="${py(y)}" stroke="#2c3b60" stroke-width="1"/>` +
-         `<text x="${mL - 10}" y="${py(y) + 4}" text-anchor="end" fill="#7f90b5" font-size="12">${y}%</text>`;
+    g += `<line x1="${mL}" x2="${W - mR}" y1="${py(y)}" y2="${py(y)}" stroke="${P.grid}" stroke-width="1"/>` +
+         `<text x="${mL - 10}" y="${py(y) + 4}" text-anchor="end" fill="${P.txt}" font-size="12">${y}%</text>`;
   }
   const pasoX = xMax > 6 ? 1 : 0.5;
   for (let x = 0; x <= xMax + 1e-9; x += pasoX) {
-    g += `<line x1="${px(x)}" x2="${px(x)}" y1="${mT}" y2="${H - mB}" stroke="#2c3b60" stroke-width="1"/>` +
-         `<text x="${px(x)}" y="${H - mB + 20}" text-anchor="middle" fill="#7f90b5" font-size="12">${x.toFixed(2)}</text>`;
+    g += `<line x1="${px(x)}" x2="${px(x)}" y1="${mT}" y2="${H - mB}" stroke="${P.grid}" stroke-width="1"/>` +
+         `<text x="${px(x)}" y="${H - mB + 20}" text-anchor="middle" fill="${P.txt}" font-size="12">${x.toFixed(2)}</text>`;
   }
 
-  // Curva de tendencia (solo bonos; excluye duration < 0,1)
-  const f = ajusteLog(pts.filter(p => !p.lecer && p.x >= 0.1));
+  // Curva de tendencia: todos los instrumentos del gráfico (opcional: sin los de duration < 0,1)
+  const ajustables = pts.filter(p => !p.corto);
+  const f = ajusteLog(ajustables);
   let linea = '';
   if (f) {
-    const xs = pts.filter(p => !p.lecer && p.x >= 0.1).map(p => p.x);
+    const xs = ajustables.map(p => p.x);
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
     const d = [];
-    for (let i = 0; i <= 60; i++) { const x = x0 + (x1 - x0) * i / 60; d.push((i ? 'L' : 'M') + px(x).toFixed(1) + ' ' + py(f(x)).toFixed(1)); }
-    linea = `<path d="${d.join(' ')}" fill="none" stroke="#3aa0d0" stroke-width="2" stroke-dasharray="6 5"/>`;
+    for (let i = 0; i <= 80; i++) { const x = x0 + (x1 - x0) * i / 80; d.push((i ? 'L' : 'M') + px(x).toFixed(1) + ' ' + py(Math.min(Math.max(f(x), yMin), yMax)).toFixed(1)); }
+    linea = `<path d="${d.join(' ')}" fill="none" stroke="${P.linea}" stroke-width="2" stroke-dasharray="6 5"/>`;
   }
 
   // Etiquetas sin superposición (arriba, abajo, derecha, izquierda)
@@ -911,36 +1006,21 @@ function renderCurva() {
       if (!choca(c)) { el = o; cajas.push(c); break; }
       el = o;
     }
-    const col = p.lecer ? '#4fd1a5' : '#7ea6e8';
-    puntos += `<circle cx="${cx}" cy="${cy}" r="7" fill="${col}" stroke="#101a33" stroke-width="2"/>` +
+    const col = p.lecer ? P.letra : P.bono;
+    puntos += `<circle cx="${cx}" cy="${cy}" r="7" fill="${p.corto ? P.bg : col}" stroke="${p.corto ? col : P.borde}" stroke-width="2"/>` +
               `<text x="${el.x}" y="${el.y}" text-anchor="${el.a}" fill="${col}" font-size="12" font-weight="700">${rot}</text>`;
   });
 
   wrap.innerHTML = `<svg id="svgCurva" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Segoe UI, Tahoma, Arial, sans-serif">
-    <rect width="${W}" height="${H}" fill="#1e2a47"/>
-    <text x="${W / 2}" y="38" text-anchor="middle" fill="#ffffff" font-size="26" font-weight="800">CURVA CER — TIR VS DURATION</text>
+    <rect width="${W}" height="${H}" fill="${P.bg}"/>
+    <text x="${W / 2}" y="38" text-anchor="middle" fill="${P.title}" font-size="24" font-weight="800">CURVA CER — TIR VS DURATION</text>
     ${g}
-    <text x="${mL - 52}" y="${(mT + H - mB) / 2}" fill="#7f90b5" font-size="12" transform="rotate(-90 ${mL - 52} ${(mT + H - mB) / 2})" text-anchor="middle">TIR Actual (%)</text>
-    <text x="${(mL + W - mR) / 2}" y="${H - 22}" text-anchor="middle" fill="#7f90b5" font-size="12">Duration (años)</text>
+    <text x="${mL - 52}" y="${(mT + H - mB) / 2}" fill="${P.txt}" font-size="12" transform="rotate(-90 ${mL - 52} ${(mT + H - mB) / 2})" text-anchor="middle">TIR Actual (%)</text>
+    <text x="${(mL + W - mR) / 2}" y="${H - 22}" text-anchor="middle" fill="${P.txt}" font-size="12">Duration (años)</text>
     ${linea}${puntos}
-    <text x="${mL}" y="${H - 22}" fill="#8fa3c9" font-size="12" font-weight="700">Carlos Sauza — Mat. CNV N° 1823</text>
-    <text x="${W - mR}" y="${H - 22}" text-anchor="end" fill="#8fa3c9" font-size="12">Bonos: azul · Letras: verde</text>
+    <text x="${mL}" y="${H - 22}" fill="${P.txt}" font-size="12" font-weight="700">Carlos Sauza — Mat. CNV N° 1823</text>
+    <text x="${W - mR}" y="${H - 22}" text-anchor="end" fill="${P.txt}" font-size="12">Bonos: azul · Letras: verde · Tendencia: línea punteada</text>
   </svg>`;
-}
-
-function descargarCurva() {
-  const svg = document.getElementById('svgCurva');
-  if (!svg) return;
-  const xml = new XMLSerializer().serializeToString(svg);
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas'); c.width = 2400; c.height = 1120;
-    const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, c.width, c.height);
-    const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'curva_cer.png';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  };
-  img.onerror = () => alert('No se pudo generar la imagen.');
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
 }
 
 function renderTodo() {
@@ -1070,9 +1150,22 @@ setInterval(() => {
   pintarTemporizador();
 }, 1000);
 
-// ============ DESCARGA (PNG) ============
-async function descargarTabla(id, titulo, archivo) {
-  if (typeof html2canvas === 'undefined') { alert('No se pudo cargar la librería de imágenes. Revisá la conexión y recargá la página.'); return; }
+// ============ IMAGEN: descargar JPG / copiar ============
+function canvasCurva() {
+  return new Promise((ok, mal) => {
+    const svg = document.getElementById('svgCurva');
+    if (!svg) return mal(new Error('sin gráfico'));
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = 2400; c.height = 1120;
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); ok(c);
+    };
+    img.onerror = () => mal(new Error('svg'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+  });
+}
+async function canvasTabla(id) {
+  if (typeof html2canvas === 'undefined') throw new Error('html2canvas');
   const origen = document.getElementById(id);
   const clon = origen.cloneNode(true);
   clon.querySelectorAll('.sort-arrow').forEach(e => e.remove());
@@ -1086,15 +1179,50 @@ async function descargarTabla(id, titulo, archivo) {
   }));
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;left:-100000px;top:0;background:#fff;width:max-content;font-family:"Segoe UI",Tahoma,sans-serif;color:#1e293b;';
-  clon.style.width = 'auto'; wrap.appendChild(clon); document.body.appendChild(wrap);
+  clon.style.width = 'auto'; wrap.appendChild(clon);
+  const eraOscuro = document.body.classList.contains('dark');
+  if (eraOscuro) document.body.classList.remove('dark');   // la imagen de la tabla siempre sale en estilo claro
+  document.body.appendChild(wrap);
+  try { return await html2canvas(wrap, { backgroundColor: '#ffffff', scale: 2 }); }
+  finally { document.body.removeChild(wrap); if (eraOscuro) document.body.classList.add('dark'); }
+}
+function cerrarMenus() { document.querySelectorAll('.cam-menu.open').forEach(m => m.classList.remove('open')); }
+function toggleCam(btn) {
+  const m = btn.parentElement.querySelector('.cam-menu'), abre = !m.classList.contains('open');
+  cerrarMenus(); if (abre) m.classList.add('open');
+}
+document.addEventListener('click', e => { if (!e.target.closest('.cam-wrap')) cerrarMenus(); });
+
+async function accionImagen(que, accion) {
+  cerrarMenus();
   try {
-    const canvas = await html2canvas(wrap, { backgroundColor: '#ffffff', scale: 2 });
-    const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = archivo;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  } catch (e) { console.log(e); alert('No se pudo generar la imagen.'); }
-  finally { document.body.removeChild(wrap); }
+    const canvas = que === 'curva' ? await canvasCurva() : await canvasTabla('tablaT');
+    const nombre = que === 'curva' ? 'curva_cer.jpg' : 'bonos_cer.jpg';
+    if (accion === 'copiar') {
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        avisoImagen('Imagen copiada al portapapeles');
+      } catch (e) {
+        alert('Tu navegador no permite copiar la imagen desde esta página. Usá "Descargar imagen (JPG)".');
+      }
+    } else {
+      // JPG no admite transparencia: se pinta fondo blanco por si acaso
+      const c2 = document.createElement('canvas'); c2.width = canvas.width; c2.height = canvas.height;
+      const ctx = c2.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c2.width, c2.height); ctx.drawImage(canvas, 0, 0);
+      const a = document.createElement('a'); a.href = c2.toDataURL('image/jpeg', 0.92); a.download = nombre;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+  } catch (e) { console.log('Error imagen:', e); alert('No se pudo generar la imagen.'); }
+}
+function avisoImagen(txt) {
+  const d = document.createElement('div');
+  d.textContent = txt;
+  d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 1800);
 }
 
+try { aplicarTema(localStorage.getItem('cer_tema') === 'noche'); } catch (e) {}
 construirEncabezados();
 renderPendientes();
 renderTodo();
