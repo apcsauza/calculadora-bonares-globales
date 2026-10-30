@@ -594,7 +594,7 @@
                     <label for="tenenciaNominal">Tenencia Nominal</label>
                     <input type="number" id="tenenciaNominal" value="100" step="10" min="0" oninput="renderFlujoTabla()">
                 </div>
-                <span class="tenencia-leyenda">Simula tu tenencia nominal (flujos en pesos con CER proyectado)</span>
+                <span class="tenencia-leyenda">Simula tu tenencia nominal (flujos con CER congelado a la fecha de liquidación)</span>
             </div>
 
             <div class="table-container">
@@ -753,7 +753,7 @@ function calcularBonoCER(tk, precio, fechaLiq, m) {
     cs += x.total * t * (t + 1) / Math.pow(1 + tirReal, t + 2);
   });
   const duration = num / den;
-  const durMod = duration / (1 + tirReal);
+  const durMod = duration / (1 + tirReal / b.freq);   // misma convención que el hub y BYMA: TIR nominal según frecuencia de pago
   const convexidad = cs / den;
 
   // Valor residual, intereses corridos, valor técnico, paridad
@@ -1086,7 +1086,8 @@ function renderFlujoTabla() {
   if (!detalleTicker || !resultados[detalleTicker]) return;
   const r = resultados[detalleTicker];
   const factor = (parseFloat(document.getElementById('tenenciaNominal').value) || 0) / 100;
-  document.getElementById('modalFlujo').innerHTML = r.flujos.map(x => `<tr>
+  // Flujos con CER congelado a la fecha de liquidación (igual que BYMA sin "CER proyectado")
+  document.getElementById('modalFlujo').innerHTML = r.flujosReal.map(x => `<tr>
       <td>${fmtFecha(x.f)}</td><td>${fmtNum(x.vr)}</td><td>${fmtNum(x.renta, 4)}</td><td>${fmtNum(x.amort)}</td>
       <td>${fmtNum(x.cer, 4)}</td><td>${fmtNum(x.rentaPesos * factor)}</td><td>${fmtNum(x.amortPesos * factor)}</td><td><b>${fmtNum(x.total * factor)}</b></td></tr>`).join('');
 }
