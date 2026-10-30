@@ -472,6 +472,13 @@
         body.dark .cam-btn, body.dark .cam-menu { background:#16213a; border-color:#2b3b5e; }
         body.dark .cam-menu button { color:#e2e8f0; }
         body.dark .cam-menu button:hover { background:#1d2a47; }
+        .curva-wrap { position:relative; }
+        .pto { cursor:pointer; }
+        .pto:hover { r:9; }
+        .curva-tip { display:none; position:absolute; z-index:30; pointer-events:none; background:#fff; color:#1e293b; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12px; line-height:1.5; box-shadow:0 6px 18px rgba(0,0,0,.2); white-space:nowrap; }
+        .curva-tip .tip-t { font-size:13px; font-weight:800; color:#1a365d; margin-bottom:2px; }
+        body.dark .curva-tip { background:#16213a; color:#e2e8f0; border-color:#3b4f7a; }
+        body.dark .curva-tip .tip-t { color:#fff; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="cer.js"></script>
@@ -1007,7 +1014,7 @@ function renderCurva() {
       el = o;
     }
     const col = p.lecer ? P.letra : P.bono;
-    puntos += `<circle cx="${cx}" cy="${cy}" r="7" fill="${p.corto ? P.bg : col}" stroke="${p.corto ? col : P.borde}" stroke-width="2"/>` +
+    puntos += `<circle class="pto" data-t="${p.t}" cx="${cx}" cy="${cy}" r="7" fill="${p.corto ? P.bg : col}" stroke="${p.corto ? col : P.borde}" stroke-width="2"/>` +
               `<text x="${el.x}" y="${el.y}" text-anchor="${el.a}" fill="${col}" font-size="12" font-weight="700">${rot}</text>`;
   });
 
@@ -1021,6 +1028,33 @@ function renderCurva() {
     <text x="${mL}" y="${H - 22}" fill="${P.txt}" font-size="12" font-weight="700">Carlos Sauza — Mat. CNV N° 1823</text>
     <text x="${W - mR}" y="${H - 22}" text-anchor="end" fill="${P.txt}" font-size="12">Bonos: azul · Letras: verde · Tendencia: línea punteada</text>
   </svg>`;
+  engancharTooltip(wrap);
+}
+
+// Cuadro flotante al pasar el mouse (o tocar) sobre un instrumento de la curva
+function engancharTooltip(wrap) {
+  let tip = wrap.querySelector('.curva-tip');
+  if (!tip) { tip = document.createElement('div'); tip.className = 'curva-tip'; wrap.appendChild(tip); }
+  const ocultar = () => { tip.style.display = 'none'; };
+  wrap.querySelectorAll('.pto').forEach(c => {
+    const mostrar = ev => {
+      const tk = c.dataset.t, r = resultados[tk], b = window.BONOS_CER[tk];
+      if (!r) return;
+      tip.innerHTML = `<div class="tip-t">${tk} — ${b.fam === 'LECER' ? 'Lecer' : 'Boncer'}</div>` +
+        `<div>TIR: ${fmtPct(r.tirReal)}</div><div>D: ${fmtNum(r.duration)}</div>` +
+        `<div>Precio: ${fmtNum(r.precio)}</div>`;
+      tip.style.display = 'block';
+      const w = wrap.getBoundingClientRect();
+      let x = ev.clientX - w.left + wrap.scrollLeft + 14, y = ev.clientY - w.top + 14;
+      if (x + tip.offsetWidth > wrap.scrollLeft + w.width - 6) x = ev.clientX - w.left + wrap.scrollLeft - tip.offsetWidth - 14;
+      tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    };
+    c.addEventListener('mouseenter', mostrar);
+    c.addEventListener('mousemove', mostrar);
+    c.addEventListener('mouseleave', ocultar);
+    c.addEventListener('click', mostrar);
+  });
+  wrap.addEventListener('mouseleave', ocultar);
 }
 
 function renderTodo() {
